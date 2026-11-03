@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "comfyui-shot-workspace"
+version = "0.1.0"
+description = "Shot planning and OpenAI-compatible LLM authoring inside ComfyUI"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {file = "LICENSE"}
+dependencies = ["aiohttp>=3.9", "Pillow>=10"]
+
+[project.urls]
+Repository = "https://github.com/ai2764/ComfyUI-ShotWorkspace"
+Issues = "https://github.com/ai2764/ComfyUI-ShotWorkspace/issues"
+
+[tool.setuptools]
+packages = ["comfyui_shot_workspace"]
+package-dir = {comfyui_shot_workspace = "."}
+
+[tool.setuptools.package-data]
+comfyui_shot_workspace = [
+  "web/*.js", "web/*.css", "authoring/*.md", "authoring/stages/*.md",
+  "authoring/skills/h3-ref2av/*.md", "authoring/skills/h3-ref2av/references/*.md",
+  "THIRD_PARTY_NOTICES.md"
+]

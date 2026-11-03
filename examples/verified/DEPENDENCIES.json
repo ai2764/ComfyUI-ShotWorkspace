@@ -1,0 +1,397 @@
+[
+  {
+    "workflow": "01-motion-context-video.json",
+    "node_types": [
+      {
+        "node_type": "BasicGuider",
+        "python_module": "comfy_extras.nodes_custom_sampler"
+      },
+      {
+        "node_type": "BasicScheduler",
+        "python_module": "comfy_extras.nodes_custom_sampler"
+      },
+      {
+        "node_type": "CLIPLoader",
+        "python_module": "nodes"
+      },
+      {
+        "node_type": "CreateVideo",
+        "python_module": "comfy_extras.nodes_video"
+      },
+      {
+        "node_type": "GetVideoComponents",
+        "python_module": "comfy_extras.nodes_video"
+      },
+      {
+        "node_type": "H3SparseAttention",
+        "python_module": "custom_nodes.H3-Optimizations"
+      },
+      {
+        "node_type": "KSamplerSelect",
+        "python_module": "comfy_extras.nodes_custom_sampler"
+      },
+      {
+        "node_type": "LoadVideo",
+        "python_module": "comfy_extras.nodes_video"
+      },
+      {
+        "node_type": "LoraLoaderModelOnly",
+        "python_module": "nodes"
+      },
+      {
+        "node_type": "MiniMaxH3MotionContext",
+        "python_module": "custom_nodes.ComfyUI-H3-Motion-Context"
+      },
+      {
+        "node_type": "MiniMaxH3MotionContextLoadLatent",
+        "python_module": "custom_nodes.ComfyUI-H3-Motion-Context"
+      },
+      {
+        "node_type": "MiniMaxH3MotionContextSaveLatent",
+        "python_module": "custom_nodes.ComfyUI-H3-Motion-Context"
+      },
+      {
+        "node_type": "MiniMaxH3MotionContextTrim",
+        "python_module": "custom_nodes.ComfyUI-H3-Motion-Context"
+      },
+      {
+        "node_type": "MiniMaxH3ReferenceToVideo",
+        "python_module": "comfy_extras.nodes_minimax_h3"
+      },
+      {
+        "node_type": "MiniMaxH3SigmaShift",
+        "python_module": "comfy_extras.nodes_minimax_h3"
+      },
+      {
+        "node_type": "RandomNoise",
+        "python_module": "comfy_extras.nodes_custom_sampler"
+      },
+      {
+        "node_type": "SamplerCustomAdvanced",
+        "python_module": "comfy_extras.nodes_custom_sampler"
+      },
+      {
+        "node_type": "SaveVideo",
+        "python_module": "comfy_extras.nodes_video"
+      },
+      {
+        "node_type": "ShotWorkspace",
+        "python_module": "custom_nodes.ComfyUI-ShotWorkspace"
+      },
+      {
+        "node_type": "ShotWorkspaceInterface",
+        "python_module": "custom_nodes.ComfyUI-ShotWorkspace"
+      },
+      {
+        "node_type": "ShotWorkspaceMedia",
+        "python_module": "custom_nodes.ComfyUI-ShotWorkspace"
+      },
+      {
+        "node_type": "UNETLoader",
+        "python_module": "nodes"
+      },
+      {
+        "node_type": "VAEDecode",
+        "python_module": "nodes"
+      },
+      {
+        "node_type": "VAEDecodeAudio",
+        "python_module": "comfy_extras.nodes_audio"
+      },
+      {
+        "node_type": "VAELoader",
+        "python_module": "nodes"
+      }
+    ]
+  },
+  {
+    "workflow": "02-multiref-latent-context.json",
+    "node_types": [
+      {
+        "node_type": "BasicGuider",
+        "python_module": "comfy_extras.nodes_custom_sampler"
+      },
+      {
+        "node_type": "BasicScheduler",
+        "python_module": "comfy_extras.nodes_custom_sampler"
+      },
+      {
+        "node_type": "CLIPLoader",
+        "python_module": "nodes"
+      },
+      {
+        "node_type": "ComfyMathExpression",
+        "python_module": "comfy_extras.nodes_math"
+      },
+      {
+        "node_type": "CreateVideo",
+        "python_module": "comfy_extras.nodes_video"
+      },
+      {
+        "node_type": "GetVideoComponents",
+        "python_module": "comfy_extras.nodes_video"
+      },
+      {
+        "node_type": "KSamplerSelect",
+        "python_module": "comfy_extras.nodes_custom_sampler"
+      },
+      {
+        "node_type": "LoadAudio",
+        "python_module": "comfy_extras.nodes_audio"
+      },
+      {
+        "node_type": "LoadImage",
+        "python_module": "nodes"
+      },
+      {
+        "node_type": "LoraLoaderModelOnly",
+        "python_module": "nodes"
+      },
+      {
+        "node_type": "MiniMaxH3AVExtensionController",
+        "python_module": "custom_nodes.ComfyUI-H3-Motion-Context-MultiRef"
+      },
+      {
+        "node_type": "MiniMaxH3AVSourceAudioModeParam",
+        "python_module": "custom_nodes.ComfyUI-H3-Motion-Context-MultiRef"
+      },
+      {
+        "node_type": "MiniMaxH3AVStartModeParam",
+        "python_module": "custom_nodes.ComfyUI-H3-Motion-Context-MultiRef"
+      },
+      {
+        "node_type": "MiniMaxH3AudioVAECompatibility",
+        "python_module": "custom_nodes.ComfyUI-H3-Motion-Context-MultiRef"
+      },
+      {
+        "node_type": "MiniMaxH3CropTo32",
+        "python_module": "custom_nodes.ComfyUI-H3-Motion-Context-MultiRef"
+      },
+      {
+        "node_type": "MiniMaxH3CustomKeyframes",
+        "python_module": "custom_nodes.ComfyUI-H3-Motion-Context-MultiRef"
+      },
+      {
+        "node_type": "MiniMaxH3FinalizeVHSOutput",
+        "python_module": "custom_nodes.ComfyUI-H3-Motion-Context-MultiRef"
+      },
+      {
+        "node_type": "MiniMaxH3GeneratedAVMaskedContext",
+        "python_module": "custom_nodes.ComfyUI-H3-Motion-Context-MultiRef"
+      },
+      {
+        "node_type": "MiniMaxH3LastActiveVHSPreviewBarrier",
+        "python_module": "custom_nodes.ComfyUI-H3-Motion-Context-MultiRef"
+      },
+      {
+        "node_type": "MiniMaxH3ReferenceToVideo",
+        "python_module": "comfy_extras.nodes_minimax_h3"
+      },
+      {
+        "node_type": "MiniMaxH3SigmaShift",
+        "python_module": "comfy_extras.nodes_minimax_h3"
+      },
+      {
+        "node_type": "MiniMaxH3SourceAudioPolicy",
+        "python_module": "custom_nodes.ComfyUI-H3-Motion-Context-MultiRef"
+      },
+      {
+        "node_type": "MiniMaxH3SourceAudioRegenLength",
+        "python_module": "custom_nodes.ComfyUI-H3-Motion-Context-MultiRef"
+      },
+      {
+        "node_type": "MiniMaxH3SourceAudioRegenMask",
+        "python_module": "custom_nodes.ComfyUI-H3-Motion-Context-MultiRef"
+      },
+      {
+        "node_type": "MiniMaxH3StartCanvasSelector",
+        "python_module": "custom_nodes.ComfyUI-H3-Motion-Context-MultiRef"
+      },
+      {
+        "node_type": "MiniMaxH3StartMaskedContext",
+        "python_module": "custom_nodes.ComfyUI-H3-Motion-Context-MultiRef"
+      },
+      {
+        "node_type": "MiniMaxH3StreamLiveExtensionAVToVHS",
+        "python_module": "custom_nodes.ComfyUI-H3-Motion-Context-MultiRef"
+      },
+      {
+        "node_type": "MiniMaxH3Validate24FPSVideo",
+        "python_module": "custom_nodes.ComfyUI-H3-Motion-Context-MultiRef"
+      },
+      {
+        "node_type": "ModelAttentionBackend",
+        "python_module": "comfy_extras.nodes_model_advanced"
+      },
+      {
+        "node_type": "Note",
+        "python_module": "frontend-only or unavailable"
+      },
+      {
+        "node_type": "PreviewAny",
+        "python_module": "comfy_extras.nodes_preview_any"
+      },
+      {
+        "node_type": "PrimitiveFloat",
+        "python_module": "comfy_extras.nodes_primitive"
+      },
+      {
+        "node_type": "PrimitiveInt",
+        "python_module": "comfy_extras.nodes_primitive"
+      },
+      {
+        "node_type": "RandomNoise",
+        "python_module": "comfy_extras.nodes_custom_sampler"
+      },
+      {
+        "node_type": "Reroute",
+        "python_module": "frontend-only or unavailable"
+      },
+      {
+        "node_type": "ResolutionSelector",
+        "python_module": "comfy_extras.nodes_resolution"
+      },
+      {
+        "node_type": "SamplerCustomAdvanced",
+        "python_module": "comfy_extras.nodes_custom_sampler"
+      },
+      {
+        "node_type": "SaveVideo",
+        "python_module": "comfy_extras.nodes_video"
+      },
+      {
+        "node_type": "ShotWorkspace",
+        "python_module": "custom_nodes.ComfyUI-ShotWorkspace"
+      },
+      {
+        "node_type": "ShotWorkspaceInterface",
+        "python_module": "custom_nodes.ComfyUI-ShotWorkspace"
+      },
+      {
+        "node_type": "ShotWorkspaceMedia",
+        "python_module": "custom_nodes.ComfyUI-ShotWorkspace"
+      },
+      {
+        "node_type": "UNETLoader",
+        "python_module": "nodes"
+      },
+      {
+        "node_type": "VAEDecode",
+        "python_module": "nodes"
+      },
+      {
+        "node_type": "VAEDecodeAudio",
+        "python_module": "comfy_extras.nodes_audio"
+      },
+      {
+        "node_type": "VAELoader",
+        "python_module": "nodes"
+      },
+      {
+        "node_type": "VHS_LoadVideoFFmpeg",
+        "python_module": "custom_nodes.ComfyUI-VideoHelperSuite"
+      },
+      {
+        "node_type": "VHS_VideoCombine",
+        "python_module": "custom_nodes.ComfyUI-VideoHelperSuite"
+      }
+    ]
+  },
+  {
+    "workflow": "03-motion-context-native-latent.json",
+    "node_types": [
+      {
+        "node_type": "BasicGuider",
+        "python_module": "comfy_extras.nodes_custom_sampler"
+      },
+      {
+        "node_type": "BasicScheduler",
+        "python_module": "comfy_extras.nodes_custom_sampler"
+      },
+      {
+        "node_type": "CLIPLoader",
+        "python_module": "nodes"
+      },
+      {
+        "node_type": "CreateVideo",
+        "python_module": "comfy_extras.nodes_video"
+      },
+      {
+        "node_type": "H3SparseAttention",
+        "python_module": "custom_nodes.H3-Optimizations"
+      },
+      {
+        "node_type": "KSamplerSelect",
+        "python_module": "comfy_extras.nodes_custom_sampler"
+      },
+      {
+        "node_type": "LoraLoaderModelOnly",
+        "python_module": "nodes"
+      },
+      {
+        "node_type": "MiniMaxH3MotionContext",
+        "python_module": "custom_nodes.ComfyUI-H3-Motion-Context"
+      },
+      {
+        "node_type": "MiniMaxH3MotionContextLoadLatent",
+        "python_module": "custom_nodes.ComfyUI-H3-Motion-Context"
+      },
+      {
+        "node_type": "MiniMaxH3MotionContextSaveLatent",
+        "python_module": "custom_nodes.ComfyUI-H3-Motion-Context"
+      },
+      {
+        "node_type": "MiniMaxH3MotionContextTrim",
+        "python_module": "custom_nodes.ComfyUI-H3-Motion-Context"
+      },
+      {
+        "node_type": "MiniMaxH3ReferenceToVideo",
+        "python_module": "comfy_extras.nodes_minimax_h3"
+      },
+      {
+        "node_type": "MiniMaxH3SigmaShift",
+        "python_module": "comfy_extras.nodes_minimax_h3"
+      },
+      {
+        "node_type": "RandomNoise",
+        "python_module": "comfy_extras.nodes_custom_sampler"
+      },
+      {
+        "node_type": "SamplerCustomAdvanced",
+        "python_module": "comfy_extras.nodes_custom_sampler"
+      },
+      {
+        "node_type": "SaveVideo",
+        "python_module": "comfy_extras.nodes_video"
+      },
+      {
+        "node_type": "ShotWorkspace",
+        "python_module": "custom_nodes.ComfyUI-ShotWorkspace"
+      },
+      {
+        "node_type": "ShotWorkspaceInterface",
+        "python_module": "custom_nodes.ComfyUI-ShotWorkspace"
+      },
+      {
+        "node_type": "ShotWorkspaceMedia",
+        "python_module": "custom_nodes.ComfyUI-ShotWorkspace"
+      },
+      {
+        "node_type": "UNETLoader",
+        "python_module": "nodes"
+      },
+      {
+        "node_type": "VAEDecode",
+        "python_module": "nodes"
+      },
+      {
+        "node_type": "VAEDecodeAudio",
+        "python_module": "comfy_extras.nodes_audio"
+      },
+      {
+        "node_type": "VAELoader",
+        "python_module": "nodes"
+      }
+    ]
+  }
+]

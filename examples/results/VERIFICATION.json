@@ -1,0 +1,54 @@
+[
+  {
+    "example": "01-motion-context-video",
+    "file": "motion-context-video.mp4",
+    "executed": true,
+    "status": "success",
+    "seconds": 27.616,
+    "width": 704,
+    "height": 480,
+    "fps": "24/1",
+    "duration_s": 2.125,
+    "sha256": "e3e1384c6296323ee8d4ad7b8a2422713c21a6fbc71470820a2c2e51e9a1368f",
+    "embedded_prompt_metadata_removed": true
+  },
+  {
+    "example": "03-motion-context-native-latent",
+    "file": "native-latent-first.mp4",
+    "executed": true,
+    "status": "success",
+    "seconds": 9.152,
+    "width": 704,
+    "height": 480,
+    "fps": "24/1",
+    "duration_s": 3.042,
+    "sha256": "c823db0393e2b0fabfdefbf9972275c7d1d2fb2ee903bc52353c17192ffaca9c",
+    "embedded_prompt_metadata_removed": true
+  },
+  {
+    "example": "03-motion-context-native-latent",
+    "file": "native-latent-continuation.mp4",
+    "executed": true,
+    "status": "success",
+    "seconds": 12.13,
+    "width": 704,
+    "height": 480,
+    "fps": "24/1",
+    "duration_s": 2.125,
+    "sha256": "e6640dae3753f85f77cbd3de6f6a0e4106188bbc83fb8c3aae81a30996f2e1ab",
+    "embedded_prompt_metadata_removed": true
+  },
+  {
+    "example": "02-multiref-latent-context",
+    "file": "multiref-latent-context.mp4",
+    "executed": true,
+    "status": "success",
+    "seconds": 36.32,
+    "width": 704,
+    "height": 480,
+    "fps": "24/1",
+    "duration_s": 5.167,
+    "sha256": "9279e155b92738ccf01a3a07158fbe8d13f7363b236383a7189af22c1707bd51",
+    "embedded_prompt_metadata_removed": true
+  }
+]

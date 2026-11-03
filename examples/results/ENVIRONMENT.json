@@ -1,0 +1,31 @@
+{
+  "python_version": "3.12.13",
+  "comfyui_version": "0.38.0",
+  "dependencies": [
+    {
+      "name": "ComfyUI",
+      "commit": "fe79ad63999483b84790797c314dee247bb175ce",
+      "local_tracked_changes": true
+    },
+    {
+      "name": "Motion Context",
+      "commit": "5335715abe54c1a9bfbe3494da29aae3e8635ce3",
+      "local_tracked_changes": false
+    },
+    {
+      "name": "H3-Optimizations",
+      "commit": "379f9c7922b3d7831dd93ae069ba0cb82cb4cf36",
+      "local_tracked_changes": true
+    },
+    {
+      "name": "MultiRef",
+      "commit": "361624fb406b63eb6694442eac6c895fc1533a70",
+      "local_tracked_changes": false
+    },
+    {
+      "name": "VideoHelperSuite",
+      "commit": "4ee72c065db22c9d96c2427954dc69e7b908444b",
+      "local_tracked_changes": false
+    }
+  ]
+}

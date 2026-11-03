@@ -1,0 +1,52 @@
+{
+  "version": "0.1.0",
+  "python_unit_tests": {
+    "run": 99,
+    "skipped": 1,
+    "failures": 0,
+    "python": "3.12.7"
+  },
+  "javascript_tests": {
+    "run": 3,
+    "failures": 0,
+    "node": "v22.23.2"
+  },
+  "public_fixture_gpu_runs": 4,
+  "all_public_outputs_full_av_decode": true,
+  "native_browser_imports": [
+    {
+      "file": "01-motion-context-video.json",
+      "imported": true,
+      "nodes": 26,
+      "api_nodes": 26,
+      "missing": []
+    },
+    {
+      "file": "03-motion-context-native-latent.json",
+      "imported": true,
+      "nodes": 24,
+      "api_nodes": 24,
+      "missing": []
+    },
+    {
+      "file": "02-multiref-latent-context.json",
+      "imported": true,
+      "nodes": 108,
+      "api_nodes": 45,
+      "missing": []
+    }
+  ],
+  "pii_endpoint_and_key_pattern_scan_findings": 0,
+  "relative_document_links_missing": 0,
+  "wheel_build": true,
+  "github_actions": "Configured; not executed remotely",
+  "runtime_environment": "examples/results/ENVIRONMENT.json",
+  "security_scan": {
+    "tool": "Gitleaks 8.30.1",
+    "reachable_history_commits": 1,
+    "secret_findings": 0,
+    "generated_video_prompt_metadata_removed": true,
+    "video_audio_packets_unchanged": true,
+    "git_identity": "GitHub noreply"
+  }
+}

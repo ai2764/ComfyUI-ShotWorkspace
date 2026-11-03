@@ -1,0 +1,28 @@
+[
+  {
+    "file": "01-motion-context-video.json",
+    "nodes": 26,
+    "groups": 0,
+    "positions_and_sizes_preserved": true,
+    "links_preserved": true,
+    "public_inputs_replaced": true
+  },
+  {
+    "file": "02-multiref-latent-context.json",
+    "nodes": 108,
+    "groups": 20,
+    "positions_and_sizes_preserved": true,
+    "links_preserved": true,
+    "public_inputs_replaced": true,
+    "upstream_original_node_geometry_restored": true,
+    "upstream_original_groups_restored": true
+  },
+  {
+    "file": "03-motion-context-native-latent.json",
+    "nodes": 24,
+    "groups": 0,
+    "positions_and_sizes_preserved": true,
+    "links_preserved": true,
+    "public_inputs_replaced": true
+  }
+]
