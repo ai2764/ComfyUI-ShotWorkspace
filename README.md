@@ -8,23 +8,34 @@ Prepare references, refine shot descriptions and write H3 video prompts inside C
 
 ## Install
 
-Copy or clone this repository into `ComfyUI/custom_nodes/ComfyUI-ShotWorkspace`. Its `__init__.py` must sit directly inside that folder.
+Already have a working ComfyUI installation with Python 3.10+? Choose the commands for your installation below. You also need Git, or use **Code → Download ZIP** and follow the [ZIP/Desktop instructions](docs/INSTALL.md). The package needs `aiohttp>=3.9` and `Pillow>=10`, installed with **ComfyUI's Python**, not an unrelated system Python.
 
-For a Git installation, run from your ComfyUI directory using its Python environment. If you already copied the ZIP, skip the clone command:
+**Windows Portable — PowerShell in `ComfyUI_windows_portable`** (the folder containing `python_embeded`):
+
+```powershell
+git clone https://github.com/ai2764/ComfyUI-ShotWorkspace.git .\ComfyUI\custom_nodes\ComfyUI-ShotWorkspace
+.\python_embeded\python.exe -m pip install -r .\ComfyUI\custom_nodes\ComfyUI-ShotWorkspace\requirements.txt
+```
+
+**Manual / venv / Conda installation — activate the environment that runs ComfyUI, then run from the ComfyUI directory**:
 
 ```sh
 git clone https://github.com/ai2764/ComfyUI-ShotWorkspace.git custom_nodes/ComfyUI-ShotWorkspace
 python -m pip install -r custom_nodes/ComfyUI-ShotWorkspace/requirements.txt
 ```
 
-Restart ComfyUI and refresh the browser. Add **Shot Workspace (prototype)** from the Shot Workspace category. This is a custom node, not a ComfyUI installation. PyTorch and ComfyUI come from your existing installation; no model weights are bundled.
+Restart ComfyUI completely and refresh the browser. Double-click an empty canvas area and search for **Shot Workspace (prototype)** (category: **Shot Workspace**). The installation should contain `custom_nodes/ComfyUI-ShotWorkspace/__init__.py` directly, without another nested repository folder.
+
+**[Full installation, first-run setup and troubleshooting](docs/INSTALL.md)** · **[中文安装指南](docs/INSTALL.zh-CN.md)**
+
+This installs the authoring node. Start an OpenAI-compatible model server separately for LLM functions; install the receiving workflow's community nodes and H3 weights separately for video generation. PyTorch and ComfyUI come from your existing installation. No model weights are bundled, and a successful LLM test does not validate video generation. Manager availability varies; the manual commands above do not require a Manager listing.
 
 ## Prepare a shot
 
 1. Under **LLM connection**, enter an OpenAI-compatible URL and writing/vision model names. Start the model server separately, then click **Test connection** for real text and image requests.
 2. Upload separate character, prop and scene assets. **Analyse image** produces an editable description; **Use description** saves it.
 3. Select current-shot references in Picture order. Enter a description, refine it, then write and review the prompt. These three operations show separate elapsed times.
-4. Create **Workflow Interface** and connect prompt and ordered images to the receiving workflow. Connect a sampler and video saver before **Generate this shot**.
+4. Click **Workflow interface ↗** to locate or add **Workflow Interface**, then connect prompt and ordered images to the receiving workflow. Connect a sampler and video saver before **Generate this shot**.
 
 Examples include an authored prompt and neutral fixtures, so their generation path can be explored without first connecting an LLM. Changing shot/reference content makes a prompt stale; rewrite it or review and accept a current prompt.
 

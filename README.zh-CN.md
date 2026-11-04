@@ -6,16 +6,34 @@
 
 ## 安装
 
-将仓库放到 `ComfyUI/custom_nodes/ComfyUI-ShotWorkspace`，确保 `__init__.py` 直接位于该目录内。用运行 ComfyUI 的 Python 安装 `requirements.txt`，重启 ComfyUI 并刷新浏览器。
+先准备能正常启动的 ComfyUI（Python 3.10+）和 Git。没有 Git 可以用仓库 **Code → Download ZIP**，按[完整安装指南](docs/INSTALL.zh-CN.md)解压。依赖必须装进 **ComfyUI 使用的 Python 环境**，本包依赖为 `aiohttp>=3.9`、`Pillow>=10`。
 
-这是独立节点包，不是整合包，不含模型权重。需要 Python 3.10 及以上，ComfyUI/PyTorch 使用现有安装。
+**Windows Portable 便携版：** 在包含 `python_embeded` 的 `ComfyUI_windows_portable` 文件夹打开 PowerShell：
+
+```powershell
+git clone https://github.com/ai2764/ComfyUI-ShotWorkspace.git .\ComfyUI\custom_nodes\ComfyUI-ShotWorkspace
+.\python_embeded\python.exe -m pip install -r .\ComfyUI\custom_nodes\ComfyUI-ShotWorkspace\requirements.txt
+```
+
+**手动安装 / venv / Conda：** 先激活启动 ComfyUI 的环境，在 ComfyUI 根目录执行：
+
+```sh
+git clone https://github.com/ai2764/ComfyUI-ShotWorkspace.git custom_nodes/ComfyUI-ShotWorkspace
+python -m pip install -r custom_nodes/ComfyUI-ShotWorkspace/requirements.txt
+```
+
+完整重启 ComfyUI 并刷新网页，在画布空白处双击，搜索 **Shot Workspace (prototype)**，分类为 **Shot Workspace**。确保 `custom_nodes/ComfyUI-ShotWorkspace/__init__.py` 直接存在，不能多套一层文件夹。
+
+**[完整中文安装、首次配置与排错](docs/INSTALL.zh-CN.md)** · **[English installation guide](docs/INSTALL.md)**。包含 Desktop、ZIP、更新方法和第一个示例的完整步骤，不依赖 Manager 已收录本节点。
+
+这是独立节点包，不是整合包，不含模型权重。ComfyUI/PyTorch 使用现有安装；LLM 功能需要另外启动兼容服务，视频生成需要另装接收工作流的社区节点和 H3 模型。Test connection 成功只代表 LLM 接口通过测试。
 
 ## 使用
 
 1. LLM connection 填 OpenAI-compatible URL、文本模型和视觉模型，单独启动模型服务后点 Test connection。
 2. 上传素材，Analyse image 读图，检查文字后 Use description 保存。
 3. 为当前镜头选择有序参考图，填写描述，Refine description，再 Write prompt 并检查。
-4. 将 Workflow Interface 的 prompt 和 image 输出接到下游入口，连接采样与保存后再 Generate this shot。
+4. 点 **Workflow interface ↗** 定位或添加 Workflow Interface，将 prompt 和 image 输出接到下游入口，连接采样与保存后再 Generate this shot。
 
 读图、描述优化、提示词编写分别计时。参考图类型和 binding 不要求用户手填。默认不卸载 LLM；开启时要配置同源、供应商支持的卸载地址。
 

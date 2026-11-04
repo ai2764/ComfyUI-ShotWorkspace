@@ -2,6 +2,8 @@
 
 Bundled reference images and the three-second video are procedural color blocks for testing media connections, not AI-generated results. Replace them with your material for creative work.
 
+New installation? Follow the [installation and first-run guide](../docs/INSTALL.md) ([中文](../docs/INSTALL.zh-CN.md)) first. It includes Windows Portable commands, Desktop/environment selection, LLM setup and a complete first run of example 01. The instructions below cover each workflow's additional dependencies and connections.
+
 ## Install fixture inputs
 
 From this repository directory, pass your actual ComfyUI input directory:
