@@ -16,4 +16,6 @@ jobs:
           node-version: "22"
       - run: python -m pip install -r requirements.txt
       - run: python -X utf8 -m unittest discover -s tests -v
-      - run: node --test tests/uuid.test.cjs tests/default-config.test.cjs
+      - run: node --test tests/uuid.test.cjs tests/default-config.test.cjs tests/planning.test.cjs
+
+      - run: python tools/build_director_packets.py --check

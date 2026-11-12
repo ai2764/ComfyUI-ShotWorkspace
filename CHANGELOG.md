@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.0
+
+- Optional Director Storyboard node: rough story to a complete reviewed shot plan, with explicit application to Shot Workspace.
+- Importable director skill folders, five authored profiles and a neutral baseline. Guidance is scoped to planning and description refinement.
+- Automatic per-shot material selection from saved asset descriptions.
+- Source-grounded shot intent, strict existing-script dialogue checks and protection against applying stale plans.
+- Separate request timings and provider decode TPS where the provider reports it.
+- Public skill ZIP, bilingual setup guides and a minimal add-on wiring example without personal media or server configuration.
+
 ## 0.1.0
 
 - Initial independent node package: shared assets, multiple drafts and one-active-shot generation.

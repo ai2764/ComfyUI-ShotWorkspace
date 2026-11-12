@@ -2,7 +2,20 @@
 
 Prepare references, refine shot descriptions and write H3 video prompts inside ComfyUI. Connect **Workflow Interface** to your existing generation workflow; that workflow continues to own models, context, sampling and decoding.
 
-**Experimental release · 0.1.0.** Python 3.10+. [中文说明](README.zh-CN.md) · [Examples](examples/README.md) · [Connection guide](docs/WORKFLOW_INTERFACE.md)
+**Experimental release · 0.2.0.** Python 3.10+. [中文说明](README.zh-CN.md) · [Examples](examples/README.md) · [Connection guide](docs/WORKFLOW_INTERFACE.md)
+
+## New: optional Director Storyboard
+
+Turn a rough story into a complete shot plan, then apply the reviewed plan to Shot Workspace. The original manual-shot workflow remains available without this add-on.
+
+1. Add **Director Storyboard (optional)** and connect its `storyboard` output to Shot Workspace's `storyboard` input.
+2. Configure an OpenAI-compatible writing model in the director node. Enter a **Story** and click **Plan shots**; the model decides how many shots to propose.
+3. Review the result, click **Use this plan**, then **Apply storyboard to connected workspace**. Applying replaces the connected workspace's shots while preserving its asset library; save any workflow you want to keep first.
+4. In Shot Workspace, upload and analyse assets, select materials automatically, refine descriptions, write prompts and connect your existing video-generation workflow.
+
+[Download the director skill ZIP](downloads/director-style-v2.2.4.zip), extract it, then use **Import skill folder** to select the `director-style` folder containing `SKILL.md`. Five authored director-inspired profiles plus a neutral baseline influence planning and description refinement only.
+
+[Director skill guide](docs/DIRECTOR_SKILLS.md) · [Planning guide](docs/SCRIPT_PLANNING.md) · [Minimal add-on wiring example](examples/director-storyboard-addon.json)
 
 ![Shot Workspace inside the ComfyUI canvas](docs/images/workspace.png)
 
@@ -31,6 +44,8 @@ Restart ComfyUI completely and refresh the browser. Double-click an empty canvas
 This installs the authoring node. Start an OpenAI-compatible model server separately for LLM functions; install the receiving workflow's community nodes and H3 weights separately for video generation. PyTorch and ComfyUI come from your existing installation. No model weights are bundled, and a successful LLM test does not validate video generation. Manager availability varies; the manual commands above do not require a Manager listing.
 
 ## Prepare a shot
+
+**Optional add-on: [Director Storyboard](docs/SCRIPT_PLANNING.md).** Keep using Shot Workspace on its own, or connect the separate Director Storyboard node for rough-idea development, director guidance and whole-story planning. Review the plan, then explicitly apply it to the workspace. **Auto-select materials** remains available per shot in the original workspace.
 
 1. Under **LLM connection**, enter an OpenAI-compatible URL and writing/vision model names. Start the model server separately, then click **Test connection** for real text and image requests.
 2. Upload separate character, prop and scene assets. **Analyse image** produces an editable description; **Use description** saves it.
@@ -68,7 +83,7 @@ The compact Motion Context integration is **not** the author's full v0.7 graph. 
 ```sh
 python -m pip install -r requirements.txt
 python -X utf8 -m unittest discover -s tests -v
-node --test tests/uuid.test.cjs tests/default-config.test.cjs
+node --test tests/uuid.test.cjs tests/default-config.test.cjs tests/planning.test.cjs
 ```
 
 Node.js 22+ is needed for JavaScript tests only. Native Torch tests skip outside a ComfyUI Torch environment. Minimal pinned JSON fixtures keep unit tests independent of private workspaces, GPU models and external APIs.

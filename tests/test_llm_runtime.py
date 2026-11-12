@@ -12,6 +12,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from llm_runtime import LLMClient, AuthoringService, parse_object
 from test_contract import workspace
 from authoring_skill import load_rule_bundle,ROOT
+from planning import PlanningService
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -68,6 +69,60 @@ class RuntimeTests(unittest.TestCase):
         self.config = {'base_url': f'http://127.0.0.1:{self.server.server_port}/v1',
                        'text_model': 'example-model', 'vision_model': 'example-model', 'api_key_env': '', 'timeout_s': 5}
         self.client = LLMClient(self.config, self.path)
+
+    def test_explicit_planned_predecessor_overrides_adjacent_shot_context(self):
+        data=workspace()
+        first=data['shots'][0];first['brief']='Chosen source';first['id']='source'
+        middle=json.loads(json.dumps(first));middle.update(id='middle',brief='Not the selected source')
+        current=json.loads(json.dumps(first));current.update(id='current',brief='Continuation',continuity={'mode':'continue','source_shot_id':'source'})
+        data['shots']=[first,middle,current];data['active_shot_id']='current'
+        _,payload=AuthoringService(self.client)._context(data)
+        self.assertEqual(payload['previous_shot_description']['description'],'Chosen source')
+
+    def test_director_skill_is_injected_for_refine_but_not_writer_or_vision(self):
+        data=workspace();data['director_skill']={'files':{'SKILL.md':'DIRECTOR_SCOPE_SENTINEL'}}
+        Handler.responses=[response(json.dumps({'description':'Walk into the room in a held wide shot.'}))]
+        AuthoringService(self.client).refine_description(data)
+        self.assertIn('DIRECTOR_SCOPE_SENTINEL',Handler.requests[0]['messages'][0]['content'])
+        sections={key:'None' for key in __import__('contract').SECTION_KEYS}
+        sections['subject_definitions']='Room <Picture 1>, person <Picture 2>.'
+        Handler.responses=[response(json.dumps(sections))]
+        AuthoringService(self.client).write_prompt(data)
+        self.assertNotIn('DIRECTOR_SCOPE_SENTINEL',Handler.requests[1]['messages'][0]['content'])
+        Handler.responses=[response(json.dumps({'description':'A blue panel.'}))]
+        AuthoringService(self.client).describe_asset({'id':'panel','name':'Panel'},'data:image/png;base64,AAAA')
+        self.assertNotIn('DIRECTOR_SCOPE_SENTINEL',Handler.requests[2]['messages'][0]['content'])
+        Handler.responses=[response(json.dumps({'selections':[{'asset_id':'actor','reason':'Identity'}],'missing':[]}))]
+        PlanningService(self.client).select(data)
+        self.assertNotIn('DIRECTOR_SCOPE_SENTINEL',Handler.requests[3]['messages'][0]['content'])
+
+    def test_planning_and_casting_use_real_client_protocol_and_rule_receipts(self):
+        script='Alex enters. Jordan leaves.'
+        planned={'shots':[{'shot_key':'one','title':'Arrival','brief':'Alex enters in a wide shot.',
+            'duration_s':5,'source_excerpt':script,'dialogue_lines':[],'continuity':{'mode':'off'}}]}
+        Handler.responses=[response(json.dumps(planned)),response(json.dumps({'selections':[
+            {'asset_id':'actor','reason':'Person identity'}],'missing':['Coffee cup']}))]
+        service=PlanningService(self.client)
+        result=service.plan({'script':script,'director_skill':{'files':{'SKILL.md':'Preserve motivated cuts.'}}})
+        cast=service.select(workspace())
+        self.assertEqual(result['shots'][0]['title'],'Arrival')
+        self.assertEqual(cast['missing'],['Coffee cup'])
+        self.assertEqual(Handler.requests[0]['max_tokens'],12000)
+        self.assertIn('Preserve motivated cuts.',Handler.requests[0]['messages'][0]['content'])
+        self.assertEqual(json.loads(Handler.requests[0]['messages'][1]['content'])['script'],script)
+        self.assertNotIn('Never select new assets',Handler.requests[1]['messages'][0]['content'])
+        calls=[json.loads(line) for line in self.path.read_text().splitlines()]
+        self.assertEqual([call['stage'] for call in calls],['script_plan','asset_select'])
+        self.assertTrue(all(call['success'] for call in calls))
+        self.assertTrue((self.path.parent/'rule-bundles'/f"{result['rule_manifest']['version']}.json").is_file())
+
+    def test_planning_repair_does_not_accept_a_partial_script(self):
+        bad={'shots':[{'shot_key':'one','title':'Arrival','brief':'Alex enters.',
+            'duration_s':5,'source_excerpt':'Alex enters.','dialogue_lines':[],'continuity':{'mode':'off'}}]}
+        Handler.responses=[response(json.dumps(bad)),response(json.dumps(bad))]
+        with self.assertRaisesRegex(ValueError,'complete script'):
+            PlanningService(self.client).plan({'script':'Alex enters. Jordan leaves.'})
+        self.assertEqual(len(Handler.requests),2)
 
     def test_vision_contains_pixels_and_every_attempt_has_timing(self):
         Handler.responses = [response('{"description":"A blue square."}')]
@@ -180,6 +235,25 @@ class RuntimeTests(unittest.TestCase):
         self.assertEqual(len(payload['previous_shot_description']['description']), 2000)
         self.assertTrue(payload['previous_shot_description']['truncated'])
         self.assertEqual(result['description'], 'Walk into the room slowly.')
+
+    def test_refine_receives_plan_intent_but_ignores_it_after_manual_brief_edit(self):
+        data=workspace();s=data['shots'][0]
+        s['plan_source']={'excerpt':'Original story','brief_basis':s['brief'],
+            'story_events':[{'event_key':'e1','decision':'Stay'}],
+            'dramatic_beat':{'event_keys':['e1'],'end_state':'Together'}}
+        Handler.responses=[response('{"description":"Walk into the room."}')]
+        first_result=AuthoringService(self.client).refine_description(data)
+        payload=json.loads(Handler.requests[-1]['messages'][1]['content'])
+        self.assertEqual(payload['planned_intent']['dramatic_beat']['end_state'],'Together')
+        self.assertTrue(first_result['planned_intent_retained'])
+        Handler.responses=[response('{"description":"Walk into the room."}')]
+        changed=AuthoringService(self.client).refine_description(data,'Change the ending')
+        self.assertFalse(changed['planned_intent_retained'])
+        s['brief']='Leave the room'
+        Handler.responses=[response('{"description":"Leave the room."}')]
+        AuthoringService(self.client).refine_description(data)
+        payload=json.loads(Handler.requests[-1]['messages'][1]['content'])
+        self.assertNotIn('planned_intent',payload)
 
     def test_writer_repairs_unselected_reference_without_mutating_saved_prompt(self):
         data = workspace()

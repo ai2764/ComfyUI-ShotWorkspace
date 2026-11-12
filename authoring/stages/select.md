@@ -1,0 +1,5 @@
+# Select materials for the current shot
+
+Match the supplied shot description and dialogue against the available asset names and saved descriptions. Return {"selections":[{"asset_id":"an exact supplied asset_id","reason":"what this reference establishes in this shot"}],"missing":["required material not available"]}.
+
+Select only the useful 0–9 image assets, in an intentional order. Match identity, wardrobe, prop design, location and useful angle semantically. Include a visible performer's identity reference even for profile, background, edge or defocused appearances. Do not select every available asset or multiple contradictory identities/wardrobes to fill slots. A character sheet's incidental background is not the scene. Never guess an asset ID, download new media or change the shot description. If no suitable reference exists return an empty selections array and describe the gap. Missing materials are suggestions for the user, not invented library records. The application assigns Picture indices in the returned order. This action explicitly replaces only the current shot's reference selection; existing library images are retained.

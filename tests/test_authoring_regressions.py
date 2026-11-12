@@ -6,7 +6,7 @@ from llm_runtime import AuthoringService
 from test_contract import workspace
 VIEW='Camera stays at the unseen observer\'s eyes, never behind the observer; no observer head, hair, neck, shoulders, back, torso, shadow or reflection appears.'
 
-LINE="That's me. Unless you're looking for Mia. She's at the flower shop."
+LINE="That's me. Unless you're looking for Alex. She's at the flower shop."
 
 class CandidateClient:
     def __init__(self,candidate):self.candidate=candidate;self.payload=None
@@ -31,7 +31,7 @@ class AuthoringRegressions(unittest.TestCase):
         return ws
 
     def test_writer_receives_actual_retained_speech_window(self):
-        candidate=sections();candidate['detailed_description']=VIEW+'\n[1.3–8.5s] Mia: <d>[English] '+LINE+'</d>'
+        candidate=sections();candidate['detailed_description']=VIEW+'\n[1.3–8.5s] Alex: <d>[English] '+LINE+'</d>'
         client=CandidateClient(candidate);AuthoringService(client).write_prompt(self.timed_workspace())
         timing=client.payload['delivery_timing']
         self.assertAlmostEqual(timing['prefix_trim_s'],22/24)
@@ -42,7 +42,7 @@ class AuthoringRegressions(unittest.TestCase):
 
     def test_dialogue_cannot_start_in_trimmed_context_or_end_in_tail_guard(self):
         for interval in ['0–5s','1.3–10s']:
-            candidate=sections();candidate['detailed_description']='['+interval+'] Mia: <d>[English] '+LINE+'</d>'
+            candidate=sections();candidate['detailed_description']='['+interval+'] Alex: <d>[English] '+LINE+'</d>'
             with self.subTest(interval=interval),self.assertRaisesRegex(ValueError,'speech window'):
                 AuthoringService(CandidateClient(candidate)).write_prompt(self.timed_workspace())
 
@@ -56,7 +56,7 @@ class AuthoringRegressions(unittest.TestCase):
             AuthoringService(CandidateClient(candidate)).write_prompt(data())
 
     def test_refined_unseen_eye_level_description_keeps_pov_constraints(self):
-        ws=data();ws['shots'][0]['brief']='Camera positioned at the unseen customer’s eye level. Mia says: "'+LINE+'"'
+        ws=data();ws['shots'][0]['brief']='Camera positioned at the unseen customer’s eye level. Alex says: "'+LINE+'"'
         candidate=sections();candidate['detailed_description']=candidate['detailed_description'].replace(VIEW,'')
         with self.assertRaisesRegex(ValueError,'observer direction'):
             AuthoringService(CandidateClient(candidate)).write_prompt(ws)
@@ -94,7 +94,7 @@ class AuthoringRegressions(unittest.TestCase):
 
     def test_refine_repair_identifies_speaker_name_inside_spoken_block(self):
         with self.assertRaisesRegex(ValueError,'Expected spoken text:.*outside'):
-            AuthoringService(CandidateClient({'description':'Mia speaks: <d>Mia: '+LINE+'</d>'})).refine_description(data())
+            AuthoringService(CandidateClient({'description':'Alex speaks: <d>Alex: '+LINE+'</d>'})).refine_description(data())
 
     def test_curly_speech_quote_and_contractions_are_preserved(self):
         ws=data();ws['shots'][0]['brief']='The baker speaks: “'+LINE.replace("'",'’')+'”'
@@ -102,12 +102,12 @@ class AuthoringRegressions(unittest.TestCase):
         self.assertIn(LINE,result['prompt_sections']['detailed_description'])
 
     def test_sign_text_is_not_inferred_as_spoken_dialogue(self):
-        ws=workspace();ws['shots'][0]['brief']='The bakery sign reads "Mia". No dialogue.'
+        ws=workspace();ws['shots'][0]['brief']='The bakery sign reads "Alex". No dialogue.'
         with self.assertRaisesRegex(ValueError,'dialogue'):
-            AuthoringService(CandidateClient(sections('Mia'))).write_prompt(ws)
+            AuthoringService(CandidateClient(sections('Alex'))).write_prompt(ws)
 
     def test_explicit_dialogue_does_not_authorize_extra_speech(self):
-        ws=data();ws['shots'][0]['dialogue']='Mia [English]: '+LINE
+        ws=data();ws['shots'][0]['dialogue']='Alex [English]: '+LINE
         with self.assertRaisesRegex(ValueError,'dialogue|speech'):
             AuthoringService(CandidateClient(sections(LINE+' Have a nice day!'))).write_prompt(ws)
 
@@ -125,9 +125,9 @@ class AuthoringRegressions(unittest.TestCase):
         self.assertEqual(AuthoringService(CandidateClient(value)).write_prompt(data())['prompt_sections'],value)
 
     def test_printed_line_is_not_inferred_as_dialogue(self):
-        ws=workspace();ws['shots'][0]['brief']='A printed line: "Mia" appears on a photo. No dialogue.'
+        ws=workspace();ws['shots'][0]['brief']='A printed line: "Alex" appears on a photo. No dialogue.'
         with self.assertRaisesRegex(ValueError,'dialogue'):
-            AuthoringService(CandidateClient(sections('Mia'))).write_prompt(ws)
+            AuthoringService(CandidateClient(sections('Alex'))).write_prompt(ws)
 
     def test_sign_says_is_not_authorization_for_speech(self):
         ws=workspace();ws['shots'][0]['brief']='The sign says: "Closed". No dialogue.'
@@ -147,7 +147,7 @@ class AuthoringRegressions(unittest.TestCase):
             AuthoringService(CandidateClient(value)).write_prompt(data())
 
     def test_refine_accepts_speaks_directly_to_camera_cue(self):
-        ws=data();text='The baker Mia speaks directly to the camera: “'+LINE.replace("'",'’')+'”'
+        ws=data();text='The baker Alex speaks directly to the camera: “'+LINE.replace("'",'’')+'”'
         self.assertEqual(AuthoringService(CandidateClient({'description':text})).refine_description(ws)['description'],text)
 
     def test_speaker_holding_printed_prop_can_still_speak(self):
@@ -155,8 +155,8 @@ class AuthoringRegressions(unittest.TestCase):
         self.assertIn(LINE,AuthoringService(CandidateClient(sections())).write_prompt(ws)['prompt_sections']['detailed_description'])
 
     def test_refine_accepts_existing_explicit_speaker_language_cue(self):
-        ws=data();ws['shots'][0]['dialogue']='Mia [English]: '+LINE
-        text='Mia [English]: '+LINE
+        ws=data();ws['shots'][0]['dialogue']='Alex [English]: '+LINE
+        text='Alex [English]: '+LINE
         result=AuthoringService(CandidateClient({'description':text})).refine_description(ws)
         self.assertEqual(result['dialogue'],ws['shots'][0]['dialogue'])
 

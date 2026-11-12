@@ -8,6 +8,7 @@ import nodes as comfy_nodes
 from comfy_execution.graph_utils import ExecutionBlocker
 
 from .contract import make_shot, compose_prompt, require_shot, llm_config, llm_request
+from .storyboard import make_storyboard, require_applied_storyboard
 
 EMPTY_WORKSPACE = json.dumps({"version": 1, "assets": [], "shots": [{"id": "shot-1", "title": "Shot 1",
     "brief": "", "duration_s": 5, "width": 704, "height": 480, "refs": []}], "active_shot_id": "shot-1"})
@@ -42,7 +43,8 @@ def load_reference(shot, picture_index):
 class ShotWorkspace:
     @classmethod
     def INPUT_TYPES(cls):
-        return {"required": {"workspace_json": ("STRING", {"multiline": True, "default": EMPTY_WORKSPACE})}}
+        return {"required": {"workspace_json": ("STRING", {"multiline": True, "default": EMPTY_WORKSPACE})},
+                "optional": {"storyboard": ("STORYBOARD",)}}
 
     RETURN_TYPES = ("SHOT", "STRING", "FLOAT", "INT", "INT", "INT", "FLOAT", "STRING")
     RETURN_NAMES = ("shot", "prompt", "duration_s", "width", "height", "length", "fps", "snapshot_json")
@@ -51,7 +53,8 @@ class ShotWorkspace:
     DESCRIPTION = "Author multiple shots and a shared asset library. LLM authoring is explicit in the editor; queue captures only the active shot."
 
     @classmethod
-    def IS_CHANGED(cls, workspace_json):
+    def IS_CHANGED(cls, workspace_json, storyboard=None):
+        require_applied_storyboard(json.loads(workspace_json), storyboard)
         shot = make_shot(workspace_json)
         expected = json.loads(workspace_json).get('_queued_media_hashes')
         hashes = tuple(hashlib.sha256(image_path(r["image"]).read_bytes()).hexdigest() for r in shot["references"])
@@ -59,7 +62,8 @@ class ShotWorkspace:
             raise ValueError('Reference bytes changed after this shot was queued. Queue a new snapshot.')
         return hashes
 
-    def capture(self, workspace_json):
+    def capture(self, workspace_json, storyboard=None):
+        require_applied_storyboard(json.loads(workspace_json), storyboard)
         shot = make_shot(workspace_json)
         hashes = self.IS_CHANGED(workspace_json)
         for ref, value in zip(shot["references"], hashes):
@@ -69,6 +73,22 @@ class ShotWorkspace:
         prompt = compose_prompt(shot) if shot["prompt_ready"] else ExecutionBlocker(
             "Review and accept a current six-section prompt in Shot Workspace before generating.")
         return shot, prompt, shot["duration_s"], shot["width"], shot["height"], shot["length"], float(shot["fps"]), json.dumps(shot, ensure_ascii=False, indent=2)
+
+
+class ShotWorkspaceStoryboard:
+    @classmethod
+    def INPUT_TYPES(cls):
+        empty = json.dumps({'version': 1, 'assets': [], 'shots': [], 'active_shot_id': None})
+        return {'required': {'storyboard_json': ('STRING', {'multiline': True, 'default': empty})}}
+
+    RETURN_TYPES = ('STORYBOARD',)
+    RETURN_NAMES = ('storyboard',)
+    FUNCTION = 'publish'
+    CATEGORY = 'Shot Workspace'
+    DESCRIPTION = 'Optional story development, director guidance and whole-story shot planning. Review and apply the plan to a connected Shot Workspace. Queueing never invokes an LLM.'
+
+    def publish(self, storyboard_json):
+        return (make_storyboard(storyboard_json),)
 
 
 class ShotWorkspaceReference:
@@ -207,9 +227,10 @@ class ShotWorkspaceH3AudioWindow:
         if not shot['prompt_ready']:raise ValueError('Write a current prompt before sampling.')
         return (mask_h3_audio(av_latent,audio_vae,window),)
 
-NODE_CLASS_MAPPINGS = {cls.__name__: cls for cls in (ShotWorkspace, ShotWorkspaceInterface, ShotWorkspaceReference, ShotWorkspaceMedia, ShotWorkspaceH3Encode,ShotWorkspaceH3AudioWindow,
+NODE_CLASS_MAPPINGS = {cls.__name__: cls for cls in (ShotWorkspace, ShotWorkspaceStoryboard, ShotWorkspaceInterface, ShotWorkspaceReference, ShotWorkspaceMedia, ShotWorkspaceH3Encode,ShotWorkspaceH3AudioWindow,
                                                     ShotWorkspaceLLMConfig, ShotWorkspaceLLMRequest)}
 NODE_DISPLAY_NAME_MAPPINGS = {"ShotWorkspace": "Shot Workspace (prototype)", "ShotWorkspaceReference": "Shot Reference",
+    "ShotWorkspaceStoryboard": "Director Storyboard (optional)",
     "ShotWorkspaceMedia": "Shot Standard Media Outputs",
     "ShotWorkspaceInterface": "Workflow Interface",
     "ShotWorkspaceH3AudioWindow": "H3 Sampling Audio Window (experimental)",

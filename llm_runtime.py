@@ -15,10 +15,12 @@ try:
     from .contract import SECTION_KEYS, make_shot, llm_config
     from .authoring_rules import authored_dialogue, validate_spoken_words, validate_refinement, delivery_window, validate_speech_window
     from .authoring_skill import load_rule_bundle
+    from .planning import director_rules
 except ImportError:
     from contract import SECTION_KEYS, make_shot, llm_config
     from authoring_rules import authored_dialogue, validate_spoken_words, validate_refinement, delivery_window, validate_speech_window
     from authoring_skill import load_rule_bundle
+    from planning import director_rules
 
 _ledger_lock = threading.Lock()
 
@@ -108,6 +110,10 @@ class LLMClient:
                     response = json.load(stream)
                 record['elapsed_ms'] = round((time.perf_counter() - started) * 1000, 2)
                 record['usage'] = response.get('usage', {})
+                provider=response.get('timings',{})
+                if isinstance(provider,dict):
+                    record['provider_timings']={key:value for key,value in provider.items()
+                        if key in {'prompt_n','prompt_ms','prompt_per_second','predicted_n','predicted_ms','predicted_per_second'} and type(value) in (int,float)}
                 choices = response.get('choices') or []
                 if not choices:
                     raise ValueError('Model returned no choices.')
@@ -198,6 +204,10 @@ class AuthoringService:
             raise ValueError('Analyse or describe every selected image before writing.')
         position = next(i for i, s in enumerate(workspace['shots']) if s['id'] == shot['shot_id'])
         previous = workspace['shots'][position - 1] if position else None
+        predecessor = shot['continuity'].get('source_shot_id') if isinstance(shot['continuity'],dict) else None
+        if predecessor:
+            previous = next((s for s in workspace['shots'][:position] if s['id'] == predecessor),None)
+            if previous is None:raise ValueError('The planned predecessor is missing or no longer before this shot. Update the continuity source.')
         previous_text = str(previous.get('brief', '')) if previous else ''
         source = workspace['shots'][position]
         payload = {'shot': {k: shot[k] for k in ('shot_id', 'title', 'brief', 'duration_s')},
@@ -222,7 +232,14 @@ class AuthoringService:
         source=next(s for s in workspace['shots'] if s['id']==shot['shot_id'])
         dialogue=authored_dialogue(source,amendment)
         payload['dialogue']=dialogue
-        bundle=load_rule_bundle('description_refine')
+        planned=source.get('plan_source',{})
+        if (isinstance(planned,dict) and planned.get('brief_basis')==source.get('brief')
+                and planned.get('dialogue_basis',source.get('dialogue',''))==source.get('dialogue','')
+                and isinstance(planned.get('dramatic_beat'),dict) and isinstance(planned.get('story_events'),list)):
+            intent={k:planned[k] for k in ('excerpt','dramatic_beat','story_events') if k in planned}
+            if len(json.dumps(intent,ensure_ascii=False))<=24000:
+                payload['planned_intent']=copy.deepcopy(intent)
+        bundle=director_rules('description_refine',workspace.get('director_skill'))
         instructions=bundle.text
         def validate(value):
             text = value.get('description')
@@ -231,7 +248,8 @@ class AuthoringService:
             validate_refinement(text,source,dialogue,amendment)
             return {'description': text.strip()}
         result = self.client.complete_json('description_refine', instructions, payload, validate=validate, shot_id=shot['shot_id'],rule_manifest=bundle.manifest())
-        return {**result['value'], 'dialogue':dialogue, 'expected_revision': shot['revision'], 'timing': result['timing']}
+        return {**result['value'], 'dialogue':dialogue, 'expected_revision': shot['revision'], 'timing': result['timing'],
+                'planned_intent_retained': 'planned_intent' in payload and not amendment.strip()}
 
     def write_prompt(self, workspace):
         shot, payload = self._context(workspace)

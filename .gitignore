@@ -11,3 +11,8 @@ dist/
 build/
 *.egg-info/
 *.whl
+
+.codex-remote-attachments/
+.live-user/
+.test-instance/
+research/

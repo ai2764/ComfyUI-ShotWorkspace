@@ -118,6 +118,21 @@
 .sw-output p { margin: 6px 0; }
 .sw-output video { width: 100%; max-height: 310px; background: #111; margin: 10px 0; }
 .sw-output > button { width: 100%; margin-top: 10px; }
+.sw-root > .sw-planning { flex: 0 1 auto; min-height: 42px; max-height: 48%; overflow: auto; padding: 8px 20px 16px; border-bottom: 1px solid var(--sw-rule); background: var(--sw-surface); }
+.sw-root > .sw-planning:not([open]) { flex-shrink: 0; padding-bottom: 8px; }
+.sw-root > .sw-planning > summary { position: sticky; top: -8px; z-index: 3; background: var(--sw-surface); color: var(--sw-text); font-size: 14px; padding: 10px 0; }
+.sw-shot-scope { font-size: 12px; font-weight: 600; color: var(--sw-muted); }
+.sw-storyboard > .sw-planning { flex: 1; max-height: none; }
+.sw-storyboard > .sw-scroll { flex: none; display: block; }
+.sw-storyboard-transfer { flex: none; padding: 14px 20px; border-top: 1px solid var(--sw-rule); }
+.sw-storyboard-transfer button { margin-top: 10px; }
+.sw-planning > summary { cursor: pointer; font-weight: 600; }
+.sw-planning > .sw-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+.sw-planning > button, .sw-planning > select { margin: 8px 8px 0 0; }
+.sw-plan-preview { max-height: 360px; overflow-y: auto; margin-top: 12px; }
+.sw-plan-shot { padding: 12px 0; border-bottom: 1px solid var(--sw-rule); }
+.sw-plan-shot h4 { margin: 0 0 8px; }
+.sw-plan-shot p { white-space: pre-wrap; overflow-wrap: anywhere; }
 .sw-unload { display: flex; align-items: center; gap: 8px; margin-top: 14px; cursor: pointer; }
 .sw-unload input { width: auto; margin: 0; flex: none; }
 .sw-error { padding: 10px; margin-top: 8px !important; color: #ffe0d2; background: #573c36; border-radius: 3px; overflow-wrap: anywhere; }
@@ -141,3 +156,11 @@
   .sw-badge { display: none; }
   .sw-footer { flex-wrap: wrap; }
 }
+
+.sw-story-draft { margin: 14px 0; padding: 14px; border: 1px solid var(--sw-rule); background: var(--sw-surface); }
+.sw-story-draft h4, .sw-step-title { margin: 14px 0 8px; }
+.sw-story-text { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 320px; overflow: auto; margin: 12px 0 !important; }
+.sw-story-draft button { margin: 8px 8px 0 0; }
+.sw-current-shot-heading { margin: 24px 0 16px !important; padding-top: 18px; border-top: 1px solid var(--sw-rule); }
+.sw-planning { scroll-margin-top: 64px; }
+.sw-operation-time { white-space: normal; overflow-wrap: anywhere; }

@@ -29,5 +29,5 @@ not new authored speech. Schedule the entire exact line after speech_start_s and
 through sampling_end_s. Immediately prefix each <d> block with [start–ends] Speaker: using numeric seconds within that speech window.
 Words in the inherited source audio do not count toward this take's line: after the lead-in pause, start the complete authored utterance
 from its first word, even if prior source audio contained the same words. Make this a fresh complete utterance in the retained interval.
-Example syntax: [1.3–8.5s] Mia: <d>[English] exact words</d>. Do not repeat the line in the prefix or tail; no extra remarks after the line.
+Example syntax: [1.3–8.5s] Alex: <d>[English] exact words</d>. Do not repeat the line in the prefix or tail; no extra remarks after the line.
 Do not change selected references, duration, or continuation settings. Prompt prose cannot enable continuation.

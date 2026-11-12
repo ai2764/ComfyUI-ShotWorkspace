@@ -107,7 +107,7 @@ def validate_refinement(description,source,dialogue,amendment=''):
     if actual!=expected:
         raise ValueError('Preserve the exact authored dialogue; do not expand, repeat or add speech in the description. '
             'Expected spoken text: '+repr(expected)+'. Put speaker names outside <d> blocks, not inside the spoken text. '
-            'For example: Mia: <d>exact words</d>. Return the corrected complete description.')
+            'For example: Alex: <d>exact words</d>. Return the corrected complete description.')
     original=source.get('brief','')+'\n'+amendment
     if _affirmative(description,_CUSTOMER_BEHIND) and not _affirmative(original,_CUSTOMER_BEHIND):
         raise ValueError('Do not change staging by moving the customer/viewer/camera behind the counter.')

@@ -7,6 +7,10 @@ from pathlib import Path
 
 ROOT=Path(__file__).resolve().parent/'authoring'
 STAGE_FILES={
+    'story_plan':('stages/story-plan.md',),
+    'script_develop':('stages/develop.md',),
+    'script_plan':('planning-common.md','stages/plan.md'),
+    'asset_select':('planning-common.md','stages/select.md'),
     'asset_analysis':('common.md','stages/analyse.md'),
     'description_refine':('common.md','stages/refine.md'),
     'prompt_write':('common.md','skills/h3-ref2av/SKILL.md','skills/h3-ref2av/references/ref-en.md','stages/write.md'),

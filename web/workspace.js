@@ -1,5 +1,6 @@
 import { app } from "../../scripts/app.js";
 import { api } from "../../scripts/api.js";
+import { applyStoryboard, profileLabel, timingSummary, activeDirectorSkill, planBasis, storyPlanBasis, selectionBasis, appendPlan, applySelection, readSkillFiles, updatePlanIntent } from "./planning.js";
 
 const KEYS = ["subject_definitions", "summary", "retention_analysis", "detailed_description", "overall_soundscape", "non_diegetic_music"];
 const SECTION_NAMES = ["Subject definitions", "Summary", "Continuity notes", "Action and camera", "Sound", "Music"];
@@ -56,15 +57,10 @@ const STAGE_NAMES = { analyse: "Image analysis", refine: "Description refinement
 function latestTiming(current, operation) {
   return current.last_attempts?.[operation] || current.timings?.findLast(t => t.stage === STAGES[operation]);
 }
-function timingText(timing) {
-  if (!timing) return "Not run yet";
-  const ms = timing.total_ms ?? timing.llm_ms;
-  if (!Number.isFinite(ms)) return "Timing unavailable";
-  return `${timing.status === "failed" ? "Failed after" : "Last run:"} ${(ms / 1000).toFixed(2)} s`;
-}
+const timingText = timingSummary;
 
-function mount(node, widget) {
-  const root = element("div", "sw-root");
+function mount(node, widget, storyboardMode=false) {
+  const root = element("div", storyboardMode?'sw-root sw-storyboard':'sw-root');
   let state, error = "", importing = false, busy = "", busyStarted = 0, timer = null, analysingAssetId = null;
   let busyOperation = null, busyShotId = null;
   let referenceFeedback = null, pendingReferenceFocus = null;
@@ -91,15 +87,54 @@ function mount(node, widget) {
   const defaultConfig = {base_url:"http://127.0.0.1:1234/v1",text_model:"",vision_model:"",api_key_env:"",timeout_s:300,unload_url:"",unload_before_generation:false};
   const polling=new Set();
   let connectionTest = null;
+  let planningOpen = true;
+  async function planScript() {
+    if (busy) return;
+    const captured = clone(state), basis = planBasis(captured), canvas = captured.shots.find(s=>s.id===captured.active_shot_id);
+    busy = 'Planning all shots';busyStarted = performance.now();error = '';render();timer = setInterval(updateProgress,200);
+    try {
+      const result = await post('/shot-workspace/llm/plan', {script:captured.script,
+        director_skill:activeDirectorSkill(captured), config:captured.llm_config || defaultConfig});
+      if (!node.graph) return;
+      if (planBasis(state) !== basis) throw Error('Script, skill or model settings changed. The plan was not applied.');
+      state.script_plan_draft = {...result,basis,width:canvas?.width??704,height:canvas?.height??480};save();
+    } catch (cause) {error = cause.message;}
+    finally {clearInterval(timer);busy = '';render();}
+  }
+  async function planStory() {
+    if(busy)return;
+    const captured=clone(state),basis=storyPlanBasis(captured);
+    busy='Planning your story';busyStarted=performance.now();error='';render();timer=setInterval(updateProgress,200);
+    try{
+      const result=await post('/shot-workspace/llm/story-plan',{story:captured.rough_idea,target_duration_s:captured.story_target_duration_s??40,assets:captured.assets,director_skill:activeDirectorSkill(captured),config:captured.llm_config||defaultConfig});
+      if(!node.graph)return;
+      if(storyPlanBasis(state)!==basis)throw Error('Story, duration, director or model settings changed. Plan again.');
+      state.script_plan_draft={...result,basis,input_mode:'story',width:captured.shots[0]?.width??704,height:captured.shots[0]?.height??480};save();
+    }catch(cause){error=cause.message;}
+    finally{clearInterval(timer);busy='';render();}
+  }
+  async function selectMaterials() {
+    if (busy) return;
+    const captured = clone(state), id = shot().id, basis = selectionBasis(captured,id);
+    busy = 'Selecting materials';busyStarted = performance.now();error = '';render();timer = setInterval(updateProgress,200);
+    try {
+      const result = await post('/shot-workspace/llm/select',{workspace:captured,config:captured.llm_config || defaultConfig});
+      if (!node.graph) return;
+      applySelection(state,id,result,basis);referenceFeedback={shotId:id,text:`Selected ${result.refs.length} materials for this shot.`};save();
+    } catch (cause) {error = cause.message;}
+    finally {clearInterval(timer);busy = '';render();}
+  }
   async function post(path, body) {
     const response = await api.fetchApi(path, {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
     const value = await response.json();
     if (!response.ok) throw Error(value.error || `Request failed (${response.status})`);
     return value;
   }
-  function fingerprint(value, id) {
+  function fingerprint(value, id, operation) {
     const index=value.shots.findIndex(s=>s.id===id);
-    return JSON.stringify([basis(value,value.shots[index]),value.shots[index].dialogue||"",index>0?value.shots[index-1].brief:""]);
+    const sourceId=value.shots[index].continuity?.source_shot_id;
+    const previous=sourceId?value.shots.find(s=>s.id===sourceId):value.shots[index-1];
+    return JSON.stringify([basis(value,value.shots[index]),value.shots[index].dialogue||"",previous?.brief||"",operation==='refine'?[activeDirectorSkill(value),value.shots[index].plan_source]:null]);
   }
   async function testConnection() {
     if(busy)return;
@@ -115,7 +150,8 @@ function mount(node, widget) {
   async function author(operation, asset = null) {
     if(busy) return;
     const captured=clone(state), id=shot().id;
-    const original=asset?JSON.stringify([asset.name,asset.image,asset.description]):fingerprint(captured,id);
+    captured.director_skill=activeDirectorSkill(captured);
+    const original=asset?JSON.stringify([asset.name,asset.image,asset.description]):fingerprint(captured,id,operation);
     busy=operation==="analyse"?"Reading image":operation==="refine"?"Refining description":"Writing H3 prompt";
     analysingAssetId=asset?.id || null;
     if(asset)delete asset.analysis_error;
@@ -137,8 +173,9 @@ function mount(node, widget) {
         if(!current)throw Error("Shot removed while writing. Result was not applied.");
         (current.timings ||= []).push(result.timing);
         (current.last_attempts ||= {})[operation]={...result.timing,status:'completed'};
-        if(fingerprint(state,id)!==original)throw Error("Shot or reference context changed while writing. Previous draft/prompt was kept.");
+        if(fingerprint(state,id,operation)!==original)throw Error("Shot, director skill or reference context changed while writing. Previous draft/prompt was kept.");
         if(operation==="refine"){
+          updatePlanIntent(current,result);
           current.before_description=current.brief;current.brief=result.description;
           if(typeof result.dialogue==='string')current.dialogue=result.dialogue;
         }else{
@@ -190,6 +227,23 @@ function mount(node, widget) {
     panel.replaceChildren();
     const job=current.job;
     panel.append(element('h3','sw-panel-title', 'Video output'), element('p','sw-help','Generate with the connected workflow and review this shot’s result.'));
+    const prepared=current.prepared_result;
+    if(prepared){
+      const section=element('section','sw-prepared-result');
+      section.append(element('h4','','Prepared result'),element('p','sw-help','Previously rendered clip, supplied with this example. Editing the shot does not change this saved clip.'));
+      const file=prepared.file;
+      const validFile=file&&['input','output','temp'].includes(file.type)&&typeof file.filename==='string'&&file.filename&&!/[\\/]/.test(file.filename)&&typeof file.subfolder==='string'&&!file.subfolder.split(/[\\/]/).includes('..');
+      if(prepared.status==='received'&&validFile){
+        if(Number.isInteger(prepared.video_frames)&&prepared.video_frames>0&&Number.isFinite(prepared.fps)&&prepared.fps>0){
+          section.append(element('p','sw-help',`${prepared.video_frames} frames · ${prepared.fps} fps · ${(prepared.video_frames/prepared.fps).toFixed(3)} s picture`));
+        }
+        const video=element('video');video.controls=true;video.preload='metadata';
+        video.src=api.apiURL(`/view?${new URLSearchParams({filename:file.filename,subfolder:file.subfolder,type:file.type})}`);
+        video.onerror=()=>{if(!section.querySelector('.sw-error'))section.append(element('p','sw-error','Prepared clip could not be loaded. Check that the media was imported.'));};
+        section.append(video);
+      }else section.append(element('p','sw-help','Prepared media not received. Playback will be available after import.'));
+      panel.append(section);
+    }
     if(job){
       panel.append(element('p','sw-help',`${job.status} · ${job.generation_ms?`${(job.generation_ms/1000).toFixed(1)}s`:'Timing pending'} · ${job.shot_id}`));
       panel.append(element('p','sw-help',job.continuation||''));
@@ -217,7 +271,7 @@ function mount(node, widget) {
   function read() {
     try {
       state = JSON.parse(widget.value);
-      if (state.version !== 1 || !Array.isArray(state.shots) || !Array.isArray(state.assets) || !state.shots.length) throw Error("Expected a version 1 workspace with shots and assets.");
+      if (state.version !== 1 || !Array.isArray(state.shots) || !Array.isArray(state.assets)) throw Error("Expected a version 1 workspace with shots and assets.");
     } catch (cause) {
       state = null; root.replaceChildren(element("p", "sw-error", `Workspace could not be loaded: ${cause.message}`));
       const repair = element("textarea"); repair.value = widget.value; repair.rows = 12; repair.setAttribute("aria-label", "Repair workspace JSON");
@@ -242,20 +296,22 @@ function mount(node, widget) {
     const previousSpeech=root.querySelector('.sw-dialogue');
     const speechExpanded=previousSpeech?.dataset.hasDialogue==='true'?previousSpeech.open:undefined;
     const expandedDescriptions = new Set([...root.querySelectorAll('.sw-asset-description[open]')].map(el => el.closest('.sw-asset').dataset.assetId));
-    const current = shot(); state.active_shot_id = current.id;
+    const current = shot(); state.active_shot_id = current?.id??null;
+    node._swRefreshStatus=()=>{};
     root.replaceChildren();
     const header = element("header", "sw-header");
-    const heading = element("div"); heading.append(element("h2", "", "Shot workspace"), element("p", "", "Author here. Generate in the workflow you already use."));
-    header.append(heading, element("span", "sw-badge", "Shot authoring")); root.append(header);
+    const heading = element("div"); heading.append(element("h2", "", storyboardMode?'Director Storyboard':'Shot workspace'), element("p", "", storyboardMode?'Optional story and director planning for all shots.':'Author here. Generate in the workflow you already use.'));
+    header.append(heading, element('span','sw-badge',storyboardMode?'Optional add-on':'Shot authoring')); root.append(header);
     const toolbar = element("div", "sw-toolbar");
     const selector = element("select"); selector.setAttribute("aria-label", "Active shot");
-    state.shots.forEach((s, i) => { const opt = element("option", "", `${i + 1}. ${s.title || "Untitled"}`); opt.value = s.id; opt.selected = s.id === current.id; selector.append(opt); });
+    state.shots.forEach((s, i) => { const opt = element("option", "", `${i + 1}. ${s.title || "Untitled"}`); opt.value = s.id; opt.selected = s.id === current?.id; selector.append(opt); });
+    if(!current){selector.append(element('option','','0 shots — plan your story above'));selector.disabled=true;}
     selector.onchange = () => mutate(() => { state.active_shot_id = selector.value; }, true);
-    toolbar.append(selector, button("+ Shot", () => mutate(() => {
-      const next = fresh(state.shots.length + 1); next.refs = clone(state.shots.at(-1).refs); state.shots.push(next); state.active_shot_id = next.id;
+    toolbar.append(element('span','sw-shot-scope','Shots'),selector, button("+ Shot", () => mutate(() => {
+      const next = fresh(state.shots.length + 1); next.refs = clone(state.shots.at(-1)?.refs||[]); state.shots.push(next); state.active_shot_id = next.id;
     }, true)), button("Remove shot", () => {
-      if (state.shots.length <= 1) return;
-      mutate(() => { const i = state.shots.indexOf(current); state.shots.splice(i, 1); state.active_shot_id = state.shots[Math.max(0, i - 1)].id; }, true);
+      if (!current) return;
+      mutate(() => { const i = state.shots.indexOf(current); state.shots.splice(i, 1); state.active_shot_id = state.shots[Math.max(0, i - 1)]?.id??null; }, true);
     }), button("Workflow interface ↗", () => {
       const linked = (node.outputs[0].links || []).map(id => node.graph.links[id]).map(link => node.graph.getNodeById(link.target_id));
       let target = linked.find(n => n?.type === "ShotWorkspaceInterface");
@@ -267,19 +323,90 @@ function mount(node, widget) {
       }
       app.canvas.selectNode(target); app.canvas.centerOnNode(target);
     }, "sw-interface-action")); root.append(toolbar);
+    toolbar.hidden=storyboardMode;
     const scroll = element("div", "sw-scroll"); root.append(scroll);
     const editor = element("main", "sw-editor"); scroll.append(editor);
     const sectionNav=element('nav','sw-section-nav');sectionNav.setAttribute('aria-label','Shot authoring sections');
     const sections=[['References','.sw-reference-panel'],['Description','.sw-shot-panel'],['Prompt','.sw-prompt-panel'],['Output','.sw-output']];
     for(const [label,selector] of sections){
       const jump=button(label,()=>{
-        const target=editor.querySelector(selector);target?.scrollIntoView({block:'start'});target?.focus({preventScroll:true});
+        const target=editor.querySelector(selector);if(selector==='.sw-planning'){target.open=true;planningOpen=true;}target?.scrollIntoView({block:'start'});target?.focus({preventScroll:true});
         for(const item of sectionNav.children){if(item.dataset.section===selector)item.setAttribute('aria-current','location');else item.removeAttribute('aria-current');}
       });
       jump.setAttribute('aria-label',`Go to ${label.toLowerCase()}`);jump.dataset.section=selector;sectionNav.append(jump);
     }
-    editor.append(sectionNav);
-    const connection=element('details','sw-connection');connection.append(element('summary','', 'LLM connection'));
+    if(!storyboardMode)editor.append(sectionNav);
+    if(storyboardMode){
+    const planning=element('details','sw-planning sw-panel');planning.open=planningOpen;planning.tabIndex=-1;
+    planning.ontoggle=()=>{planningOpen=planning.open;};
+    planning.append(element('summary','','Story & direction · All shots'));
+    planning.append(element('p','sw-help','Global story and director guidance for the whole shot plan. Apply it to Shot Workspace to edit individual shots.'));
+    planning.append(element('p','sw-help','Tell us what you want to film. A few sentences or rough notes are enough — no screenplay or dialogue required.'));
+    const ideaInput=field(planning,'Story',state.rough_idea||'',v=>mutate(()=>{state.rough_idea=v;}),{area:true,rows:5,placeholder:'For example: Two neighbors meet during a power outage. One wants to borrow a flashlight; the other is reluctant to admit being afraid of the dark. Light, slightly awkward humor.'});
+    ideaInput.maxLength=40000;ideaInput.disabled=!!busy;
+    const sceneTarget=field(planning,'Target duration (seconds)',state.story_target_duration_s??40,v=>mutate(()=>{state.story_target_duration_s=Math.min(120,Math.max(5,Number.isFinite(v)?v:40));}),{type:'number',min:5,max:120,step:1});sceneTarget.disabled=!!busy;
+    planning.append(element('p','sw-help','The director can propose dialogue where it helps, or keep the shots silent. You review the whole plan before using it.'));
+    const skillActions=element('div','sw-actions');
+    for (const [label,directory] of [['Import SKILL.md',false],['Import skill folder',true]]) {
+      const input=element('input');input.type='file';input.accept='.md';input.hidden=true;
+      if(directory){input.webkitdirectory=true;input.multiple=true;}
+      input.onchange=async()=>{
+        if(busy)return;
+        busy='Reading director skill';error='';render();
+        try {const skill=await readSkillFiles(input.files,directory);state.director_skill=skill;state.director_skill_enabled=true;save();}
+        catch(cause){error=cause.message;}finally{busy='';render();}
+      };
+      const importButton=button(label,()=>input.click());importButton.disabled=!!busy;skillActions.append(importButton,input);
+    }
+    planning.append(skillActions);
+    const skill=state.director_skill;
+    if(skill){
+      const mode=element('select');mode.setAttribute('aria-label','Director guidance');
+      for(const [value,label] of [['off','No imported director'],['on','Use imported director']]){const option=element('option','',label);option.value=value;option.selected=(activeDirectorSkill(state)?'on':'off')===value;mode.append(option);}
+      mode.disabled=!!busy;mode.onchange=()=>mutate(()=>{state.director_skill_enabled=mode.value==='on';},true);planning.append(mode);
+      planning.append(element('p','sw-help',`Imported skill: ${skill.name}`));
+      const profiles=Object.keys(skill.files).filter(name=>name.startsWith('profiles/'));
+      if(profiles.length){
+        const profile=element('select');profile.setAttribute('aria-label','Director profile');
+        for(const name of ['',...profiles]){const option=element('option','',name?profileLabel(name):'Base skill only');option.value=name;option.selected=name===(skill.profile||'');profile.append(option);}
+        profile.disabled=!!busy||!activeDirectorSkill(state);profile.onchange=()=>mutate(()=>{skill.profile=profile.value;});planning.append(profile);
+      }
+      const remove=button('Remove imported skill',()=>mutate(()=>{delete state.director_skill;},true));remove.disabled=!!busy;planning.append(remove);
+    }else planning.append(element('p','sw-help','No imported director. Built-in planning rules apply. Import a skill to compare guidance.'));
+    planning.append(element('p','sw-help','Skill folders include linked Markdown references and one selected profile. Text only; no tools or scripts run.'));
+    const planButton=button('Plan shots',planStory,'sw-primary');planButton.disabled=!!busy||!state.rough_idea?.trim();
+    ideaInput.addEventListener('input',()=>{planButton.disabled=!!busy||!state.rough_idea?.trim();});planning.append(planButton);
+    if(busy)planning.append(element('p','sw-help sw-busy',`${busy} · ${((performance.now()-busyStarted)/1000).toFixed(1)} s`));
+    const scriptOptions=element('details','sw-existing-script');scriptOptions.append(element('summary','','Have a finished script? (optional)'));
+    const scriptInput=field(scriptOptions,'Existing script (optional)',state.script||'',v=>mutate(()=>{state.script=v;}),{area:true,rows:5,placeholder:'Only if you already have a script whose dialogue should stay unchanged.'});scriptInput.maxLength=40000;scriptInput.disabled=!!busy;
+    const strictPlan=button('Plan existing script',planScript);strictPlan.disabled=!!busy||!state.script?.trim();scriptInput.addEventListener('input',()=>{strictPlan.disabled=!!busy||!state.script?.trim();});scriptOptions.append(strictPlan);planning.append(scriptOptions);
+    if(state.story_plan_timing)planning.append(element('p','sw-help',`Last plan · ${timingText(state.story_plan_timing)}`));
+    if(state.script_plan_draft){
+      const draft=state.script_plan_draft;
+      planning.append(element('p','sw-help',`${draft.shots.length} planned shots · ${timingText(draft.timing)} · References can be selected per shot after adding.`));
+      const preview=element('div','sw-plan-preview');
+      draft.shots.forEach((s,i)=>{
+        const card=element('article','sw-plan-shot');card.append(element('h4','',`${i+1}. ${s.title} · ${s.duration_s}s`),element('p','',s.brief));
+        if(s.dialogue)card.append(element('p','sw-help',s.dialogue));
+        if(s.dramatic_beat){
+          const detail=element('details','sw-help');detail.append(element('summary','','Story beat and framing purpose'));
+          for(const [label,key] of [['Starts','start_state'],['Changes','change'],['Ends','end_state'],['View purpose','cut_reason']])detail.append(element('p','',`${label}: ${s.dramatic_beat[key]}`));
+          card.append(detail);
+        }
+        if(s.continuity.mode==='continue')card.append(element('p','sw-help',`Planned continuation from ${s.continuity.source_shot_key} — media must be connected separately.`));
+        preview.append(card);
+      });planning.append(preview);
+      const add=button(draft.input_mode==='story'?`Use this plan (${draft.shots.length} shots)`:`Add all ${draft.shots.length} shots`,()=>{try{appendPlan(state,draft,uid);save();render();}catch(cause){error=cause.message;render();}},'sw-primary');add.disabled=!!busy;planning.append(add);
+      const discard=button('Discard draft',()=>mutate(()=>{delete state.script_plan_draft;},true));discard.disabled=!!busy;planning.append(discard);
+    }
+    if(state.shots.length){
+      const reviewed=element('section','sw-reviewed-shots');reviewed.append(element('h4','',`Reviewed storyboard · ${state.shots.length} shots`));
+      state.shots.forEach((s,i)=>{const row=element('details');row.append(element('summary','',`${i+1}. ${s.title||'Untitled'} · ${Number(s.duration_s).toFixed(2)}s`),element('p','sw-help',s.brief||''));if(s.dialogue)row.append(element('p','sw-story-text',s.dialogue));reviewed.append(row);});planning.append(reviewed);
+    }
+    root.insertBefore(planning,toolbar);
+    }
+    if(current)editor.append(element('h3','sw-current-shot-heading',`Current shot · ${current.title||'Untitled'}`));
+    const connection=element('details','sw-connection');connection.append(element('summary','', `LLM connection / settings · ${state.llm_config?.text_model||'Select writing model'}`));
     connection.open=!!connectionExpanded;
     state.llm_config ||= clone(defaultConfig);
     for(const [key,label]of [['base_url','OpenAI-compatible URL'],['text_model','Writing model'],['vision_model','Vision model'],['api_key_env','API key environment variable'],['unload_url','Model unload URL before video (optional)']]){
@@ -297,9 +424,42 @@ function mount(node, widget) {
       if(!target){error='Reload ComfyUI after enabling the updated node package.';render();return;}
       target.pos=[node.pos[0]+node.size[0]+80,node.pos[1]];node.graph.add(target);node.connect(0,target,0);
     });scroll.append(connection);
+    if(storyboardMode){
+      editor.remove();
+      const transfer=element('section','sw-storyboard-transfer');
+      transfer.append(element('p','sw-help',`${state.shots.length} reviewed shots. Connect storyboard → Shot Workspace, then apply. This replaces the receiving shot list; it does not run a model or generate video.`));
+      const apply=button('Apply storyboard to connected workspace',async()=>{
+        try{
+          const targets=(node.outputs[0].links||[]).map(id=>node.graph.links[id]).map(link=>node.graph.getNodeById(link.target_id)).filter(n=>n?.type==='ShotWorkspace');
+          if(targets.length!==1)throw Error('Connect this storyboard to exactly one Shot Workspace before applying.');
+          if(!targets[0]._swApplyStoryboard)throw Error('Refresh the receiving workspace before applying.');
+          const captured=clone(state),before=JSON.stringify(captured);
+          const packet=await post('/shot-workspace/storyboard',{workspace:captured});
+          if(JSON.stringify(state)!==before)throw Error('Storyboard changed during transfer. Review and apply again.');
+          if(!(node.outputs[0].links||[]).some(id=>node.graph.links[id]?.target_id===targets[0].id))throw Error('Storyboard connection changed. Connect and apply again.');
+          targets[0]._swApplyStoryboard(packet);error='';
+          transfer.querySelector('[role="status"]').textContent=`Applied ${packet.workspace.shots.length} shots to the connected workspace.`;
+        }catch(cause){error=cause.message;render();}
+      },'sw-primary');apply.disabled=!!busy||!state.shots.length;
+      transfer.append(apply,element('p','sw-help',''));transfer.lastChild.setAttribute('role','status');
+      if(error)transfer.append(element('p','sw-error',error));
+      root.append(transfer);
+      if(busy)root.querySelectorAll('input,textarea,select,button').forEach(el=>el.disabled=true);
+      return;
+    }
+    if(!current){
+      editor.append(element('section','sw-empty-shots','0 shots. Add a storyboard upstream, or use + Shot to create a shot manually.'));
+      if(error)editor.append(element('p','sw-error',error));
+      if(busy)root.querySelectorAll('input,textarea,select,button').forEach(el=>el.disabled=true);
+      return;
+    }
     const references=element('section','sw-panel sw-reference-panel');editor.append(references);
     const referenceHeader=element('div','sw-section-header');referenceHeader.append(element('h3','sw-panel-title','Shot references'),element('span','sw-reference-count',`${current.refs.length} / 9 pictures`));
     references.append(referenceHeader,element('p','sw-help','These pictures are sent in this order. The assistant determines how to use each picture from its description and your brief.'));
+    const autoSelect=button('Auto-select materials',selectMaterials);autoSelect.disabled=!!busy||!current.brief?.trim();
+    references.append(autoSelect,element('p','sw-help','Uses saved material descriptions and this shot’s description. Replaces this shot’s selection; library files are kept.'));
+    if(current.selection_timing)references.append(element('p','sw-help',`Material selection · ${timingText(current.selection_timing)}`));
+    if(current.selection_missing?.length)references.append(element('p','sw-error',`Missing materials: ${current.selection_missing.join('; ')}`));
     const feedback=element('p','sw-reference-feedback',referenceFeedback?.shotId===current.id?referenceFeedback.text:'');
     feedback.setAttribute('role','status');feedback.setAttribute('aria-live','polite');references.append(feedback);
     const referenceList=element('ol','sw-references');referenceList.setAttribute('aria-label','Pictures for this shot');referenceList.tabIndex=0;references.append(referenceList);
@@ -328,6 +488,7 @@ function mount(node, widget) {
     const referenceWarning=element('p','sw-reference-warning');referenceWarning.hidden=true;references.append(referenceWarning);
     const shotPanel=element('section','sw-panel sw-shot-panel');
     shotPanel.append(element('h3','sw-panel-title','Shot description'),element('p','sw-help','Describe the action and camera intent. Refine the idea before writing the prompt.'));
+    if(activeDirectorSkill(state))shotPanel.append(element('p','sw-help',`Director guidance: ${state.director_skill.profile?profileLabel(state.director_skill.profile):state.director_skill.name}.`));
     if(busy)shotPanel.append(element('p','sw-busy',busy));
     editor.append(shotPanel);
     const summary = element("div", "sw-summary");
@@ -413,6 +574,7 @@ function mount(node, widget) {
     operationError(promptPanel,current,'write');
     const status = element("p", "sw-status"); promptPanel.append(status);
     node._swRefreshStatus = () => {
+      autoSelect.disabled=!!busy||!current.brief?.trim();
       const count = Math.max(5, Math.ceil(Number(current.duration_s) * 24)); const frames = count + ((5 - count) % 17 + 17) % 17;
       const stale = current.prompt_editor_dirty || (current.prompt_sections && !current.prompt_basis) || (current.prompt_basis && JSON.stringify(current.prompt_basis) !== JSON.stringify(basis(state, current)));
       const trimNote = current.continuity?.mode === "external_workflow" ? ", before external trim" : "";
@@ -457,7 +619,7 @@ function mount(node, widget) {
     }
     const output=element('section','sw-output');paintOutput(output,current);editor.append(output);
     if (error) editor.append(element("p", "sw-error", error));
-    const connectionNotes=button('Connection notes ↗',()=>{
+    const connectionNotes=button('Workflow connection notes ↗',()=>{
       let note=node.graph._nodes.find(n=>n.properties?.shot_workspace_connection_notes);
       if(!note){
         note=LiteGraph.createNode('MarkdownNote')||LiteGraph.createNode('Note');
@@ -508,6 +670,7 @@ For an independent shot, leave continuation disconnected. Advanced media ports c
   const dom = node.addDOMWidget("shot_workspace_editor", "SHOT_WORKSPACE_EDITOR", root, { serialize: false });
   dom.computeSize = (width) => [width, Math.max(580, node.size[1] - 210)];
   node._swReload = () => { if (read()) {render();for(const s of state.shots)if(['queued','running'].includes(s.job?.status))startPoll(s.job.prompt_id,s.id);} };
+  node._swApplyStoryboard=packet=>{state=applyStoryboard(state,packet);save();render();};
   node._swReload();
   return dom;
 }
@@ -531,15 +694,16 @@ app.registerExtension({
         view.value = message.text?.join("\n") || "";
       };
     }
-    if (nodeData.name !== "ShotWorkspace") return;
+    if (!['ShotWorkspace','ShotWorkspaceStoryboard'].includes(nodeData.name)) return;
     const created = nodeType.prototype.onNodeCreated;
     nodeType.prototype.onNodeCreated = function () {
       created?.apply(this, arguments);
-      const widget = this.widgets.find((w) => w.name === "workspace_json");
+      const storyboardMode=nodeData.name==='ShotWorkspaceStoryboard';
+      const widget = this.widgets.find((w) => w.name === (storyboardMode?'storyboard_json':'workspace_json'));
       // Keep the actual backend widget serialized, with the editor as its view.
       widget.computeSize = () => [0, -4];
       if (widget.element) widget.element.style.display = "none";
-      mount(this, widget); this.setSize([800, 940]);
+      mount(this, widget,storyboardMode); this.setSize(storyboardMode?[760,1000]:[800, 940]);
     };
     const configured = nodeType.prototype.onConfigure;
     nodeType.prototype.onConfigure = function () { configured?.apply(this, arguments); this._swReload?.(); };

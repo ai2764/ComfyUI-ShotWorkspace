@@ -2,7 +2,20 @@
 
 在 ComfyUI 节点里管理参考素材、完善镜头描述、编写 H3 视频提示词，通过 **Workflow Interface** 接到现有生成工作流。模型加载、采样、context 和解码继续由原工作流负责。
 
-**0.1.0，实验性首版。** 菜单名称保留 **Shot Workspace (prototype)**，现有节点类型没有更名。
+**0.2.0，实验性更新。** 菜单名称保留 **Shot Workspace (prototype)**，新增可选的 **Director Storyboard** 节点。
+
+## 新增：导演分镜节点
+
+从粗略故事一次生成完整分镜，再将审阅后的计划应用到 Shot Workspace。导演节点是可选扩展，原来的手动分镜流程可以继续使用。
+
+1. 添加 **Director Storyboard (optional)**，将它的 `storyboard` 输出接到 Shot Workspace 的 `storyboard` 输入。
+2. 在导演节点配置 OpenAI-compatible 写作模型，输入 **Story**，点击 **Plan shots**。模型决定镜头数量。
+3. 审阅结果，点击 **Use this plan**，再点击 **Apply storyboard to connected workspace**。应用计划会替换已连接工作区的镜头列表，保留素材库；请先保存需要保留的工作流。
+4. 在工作区上传并分析素材，自动选素材、优化镜头描述、写提示词，再接入原有视频生成工作流。
+
+[下载导演 skill ZIP](downloads/director-style-v2.2.4.zip)，解压后通过 **Import skill folder** 选择含 `SKILL.md` 的 `director-style` 文件夹。包含五种自行编写的导演风格指导和通用基线，仅注入分镜与描述优化步骤。
+
+[导演 skill 使用说明](docs/DIRECTOR_SKILLS.zh-CN.md) · [分镜流程](docs/SCRIPT_PLANNING.zh-CN.md) · [最简接线示例](examples/director-storyboard-addon.json)
 
 ## 安装
 
@@ -30,6 +43,8 @@ python -m pip install -r custom_nodes/ComfyUI-ShotWorkspace/requirements.txt
 
 ## 使用
 
+**可选扩展：[Director Storyboard 导演分镜节点](docs/SCRIPT_PLANNING.zh-CN.md)。** 原 Shot Workspace 仍可独立使用；需要时接入新节点，输入 rough idea／剧本、加载导演 skill 并规划全片，审阅后明确应用到原节点。每镜的 **Auto-select materials** 仍在原节点中使用。
+
 1. LLM connection 填 OpenAI-compatible URL、文本模型和视觉模型，单独启动模型服务后点 Test connection。
 2. 上传素材，Analyse image 读图，检查文字后 Use description 保存。
 3. 为当前镜头选择有序参考图，填写描述，Refine description，再 Write prompt 并检查。
@@ -53,4 +68,4 @@ Motion Context 紧凑示例不是作者完整 v0.7 原图。作者原始 JSON �
 
 一次队列只执行当前镜头。上一段视频或 latent 要明确选择；结果不会自动回接，也不支持同次执行的反馈环。不同 latent 格式不能仅凭端口同名互换；跨工作流优先复用原解码器，通过标准 VIDEO 转接。高级音视频端口目前只是显式透传。
 
-不含 Mia/Tao 私有素材、录屏工程、密钥或个人服务配置。自有代码采用 MIT，社区 JSON 与派生示例保留各自许可，见[第三方声明](THIRD_PARTY_NOTICES.md)。
+不含私有素材、录屏工程、密钥或个人服务配置。自有代码采用 MIT，社区 JSON 与派生示例保留各自许可，见[第三方声明](THIRD_PARTY_NOTICES.md)。

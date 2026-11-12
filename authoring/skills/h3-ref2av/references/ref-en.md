@@ -56,7 +56,7 @@ At the first visible occurrence of a referenced element, cite its `<Picture N>` 
 Give every audible performer a stable ID such as `(S1)`. Preserve authored words and source language:
 
 ```text
-Mia (S1) looks toward the controls and whispers, <d>[Chinese] 我们到了吗？</d>
+Alex (S1) looks toward the controls and whispers, <d>[Chinese] 我们到了吗？</d>
 ```
 
 Keep speaker, delivery, and action outside the `<d>` block. Put only `[Language]` and spoken words inside it. Do not repeat spoken words elsewhere.

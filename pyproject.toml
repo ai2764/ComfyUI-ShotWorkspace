@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "comfyui-shot-workspace"
-version = "0.1.0"
+version = "0.2.0"
 description = "Shot planning and OpenAI-compatible LLM authoring inside ComfyUI"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -23,5 +23,8 @@ package-dir = {comfyui_shot_workspace = "."}
 comfyui_shot_workspace = [
   "web/*.js", "web/*.css", "authoring/*.md", "authoring/stages/*.md",
   "authoring/skills/h3-ref2av/*.md", "authoring/skills/h3-ref2av/references/*.md",
+  "authoring/skills/director-style/*.md", "authoring/skills/director-style/references/*.md",
+  "authoring/skills/director-style/profiles/*.md", "authoring/skills/director-style/injection/*.md",
+  "authoring/skills/director-style/dialogue/*.md",
   "THIRD_PARTY_NOTICES.md"
 ]

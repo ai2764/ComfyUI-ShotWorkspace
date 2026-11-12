@@ -19,6 +19,8 @@ from server import PromptServer
 
 from .contract import make_shot
 from .llm_runtime import LLMClient, AuthoringService
+from .planning import PlanningService
+from .storyboard import make_storyboard
 from .nodes import ShotWorkspace, image_path
 from .generation import select_generation_branch, release_model, continuation_status
 
@@ -66,6 +68,14 @@ def describe_image(asset):
 
 def author(body, operation):
     service = AuthoringService(LLMClient(body['config'], store_root() / 'llm_calls.jsonl'))
+    if operation == 'develop':
+        return PlanningService(service.client).develop(body)
+    if operation == 'plan':
+        return PlanningService(service.client).plan(body)
+    if operation == 'story-plan':
+        return PlanningService(service.client).story_plan(body)
+    if operation == 'select':
+        return PlanningService(service.client).select(body['workspace'])
     if operation == 'test':
         output = io.BytesIO()
         Image.new('RGB', (64, 64), (0, 64, 255)).save(output, format='PNG')
@@ -103,6 +113,14 @@ def register_routes():
         return
     routes = PromptServer.instance.routes
 
+    @routes.post('/shot-workspace/storyboard')
+    async def storyboard_packet(request):
+        try:
+            body = await request.json()
+            return web.json_response(make_storyboard(json.dumps(body['workspace'])))
+        except Exception as exc:
+            return web.json_response({'error': str(exc)}, status=400)
+
     @routes.post('/shot-workspace/llm/{operation}')
     async def llm_action(request):
         try:
@@ -135,7 +153,14 @@ def register_routes():
             output_types = {name for name, value in comfy_nodes.NODE_CLASS_MAPPINGS.items() if getattr(value, 'OUTPUT_NODE', False)}
             prompt, output_ids = select_generation_branch(prompt, node_id, output_types)
             frozen = json.dumps(body['workspace'], ensure_ascii=False)
-            snapshot = ShotWorkspace().capture(frozen)[0]
+            storyboard = None
+            storyboard_link = prompt[node_id].get('inputs', {}).get('storyboard')
+            if storyboard_link is not None:
+                source = prompt.get(str(storyboard_link[0]), {})
+                if source.get('class_type') != 'ShotWorkspaceStoryboard':
+                    raise ValueError('Use a Director Storyboard node for the optional storyboard input.')
+                storyboard = make_storyboard(source['inputs']['storyboard_json'])
+            snapshot = ShotWorkspace().capture(frozen, storyboard=storyboard)[0]
             if not snapshot['prompt_ready']:
                 raise ValueError('Write a current prompt before generating.')
             queued_workspace = json.loads(frozen)
