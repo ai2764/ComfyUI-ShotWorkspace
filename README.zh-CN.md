@@ -59,8 +59,9 @@ python -m pip install -r custom_nodes/ComfyUI-ShotWorkspace/requirements.txt
 - **01 Motion Context 视频衔接**：紧凑采样模板，前段视频拆成图像、音频后接入。
 - **02 MultiRef latent context**：保留 seitanism 原版 AV Extension 的 102 个原节点、20 个分组及布局，增加 6 个接入节点，启用一次 extension。
 - **03 原生 H3 latent 衔接**：先生成并保存第一段 latent，再手动选择它继续生成。
+- **[Pika H3 Flex＋Motion Context](examples/pika-motion-context/README.zh-CN.md)**：保留官方 22 个原节点的位置、尺寸与原始分组，提供空白首段／latent 续段模板；测试台词、提示词及人物素材已清空，使用前填写自己的内容。
 
-接线来源于已成功出视频的本地实例。公开副本替换了私有素材、提示词和配置，并用附带色块素材重新实际生成了四段视频，覆盖视频衔接、latent 首段与续接、MultiRef extension；小段输出样片与哈希一并附带，见[验证范围](examples/VERIFICATION.md)。
+前 01–03 项接线来源于已成功出视频的本地实例。公开副本替换了私有素材、提示词和配置，并用附带色块素材重新实际生成了四段视频，覆盖视频衔接、latent 首段与续接、MultiRef extension；小段输出样片与哈希一并附带，见[验证范围](examples/VERIFICATION.md)。新增 Pika 项是另行清空内容的创作模板：私有源样片已跑通，公开空白文件须先填写自己的素材和提示词再生成。
 
 Motion Context 紧凑示例不是作者完整 v0.7 原图。作者原始 JSON 和保留原布局的接入参考另外提供；完整 v0.7 参考不宣称整套推理已通过。
 

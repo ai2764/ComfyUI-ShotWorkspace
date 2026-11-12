@@ -1,0 +1,291 @@
+{
+  "upstream": "https://github.com/Comfy-Org/workflow_templates/blob/main/templates/video_pika_h3_flex_ref2va.json",
+  "pinned_original_sha256": "ae9e656deb54043a8daec5b47c065207db1b43775380cf14e43229921bb79092",
+  "original_node_geometry": {
+    "92": {
+      "pos": [
+        750,
+        4870
+      ],
+      "size": [
+        1380,
+        970
+      ]
+    },
+    "115": {
+      "pos": [
+        -1490,
+        5980
+      ],
+      "size": [
+        270,
+        170
+      ]
+    },
+    "117": {
+      "pos": [
+        -2020,
+        4890
+      ],
+      "size": [
+        440,
+        740
+      ]
+    },
+    "119": {
+      "pos": [
+        -1490,
+        5490
+      ],
+      "size": [
+        640,
+        70
+      ]
+    },
+    "120": {
+      "pos": [
+        -1490,
+        5630
+      ],
+      "size": [
+        650,
+        70
+      ]
+    },
+    "121": {
+      "pos": [
+        20,
+        5730
+      ],
+      "size": [
+        230,
+        60
+      ]
+    },
+    "122": {
+      "pos": [
+        20,
+        5610
+      ],
+      "size": [
+        230,
+        60
+      ]
+    },
+    "123": {
+      "pos": [
+        0,
+        5200
+      ],
+      "size": [
+        370,
+        70
+      ]
+    },
+    "125": {
+      "pos": [
+        410,
+        5120
+      ],
+      "size": [
+        230,
+        140
+      ]
+    },
+    "126": {
+      "pos": [
+        0,
+        5090
+      ],
+      "size": [
+        360,
+        60
+      ]
+    },
+    "127": {
+      "pos": [
+        -1490,
+        4980
+      ],
+      "size": [
+        640,
+        90
+      ]
+    },
+    "128": {
+      "pos": [
+        -1490,
+        5300
+      ],
+      "size": [
+        640,
+        120
+      ]
+    },
+    "129": {
+      "pos": [
+        0,
+        4950
+      ],
+      "size": [
+        360,
+        90
+      ]
+    },
+    "131": {
+      "pos": [
+        -1470,
+        6370
+      ],
+      "size": [
+        230,
+        80
+      ]
+    },
+    "132": {
+      "pos": [
+        -1480,
+        6230
+      ],
+      "size": [
+        270,
+        70
+      ]
+    },
+    "136": {
+      "pos": [
+        -610,
+        5070
+      ],
+      "size": [
+        400,
+        410
+      ]
+    },
+    "138": {
+      "pos": [
+        -1480,
+        6430
+      ],
+      "size": [
+        360,
+        480
+      ]
+    },
+    "145": {
+      "pos": [
+        -1490,
+        5140
+      ],
+      "size": [
+        640,
+        90
+      ]
+    },
+    "147": {
+      "pos": [
+        0,
+        5340
+      ],
+      "size": [
+        370,
+        100
+      ]
+    },
+    "149": {
+      "pos": [
+        -1060,
+        5990
+      ],
+      "size": [
+        400,
+        480
+      ]
+    },
+    "150": {
+      "pos": [
+        -630,
+        5990
+      ],
+      "size": [
+        400,
+        480
+      ]
+    },
+    "152": {
+      "pos": [
+        340,
+        5600
+      ],
+      "size": [
+        284.158203125,
+        174
+      ]
+    }
+  },
+  "template_checks": [
+    {
+      "template": "start",
+      "original_node_count": 22,
+      "original_geometry_preserved": true,
+      "original_groups_preserved": true,
+      "links_valid": true,
+      "workspace_assets_empty": true,
+      "story_descriptions_and_prompts_empty": true,
+      "requires_user_authoring": true
+    },
+    {
+      "template": "continue",
+      "original_node_count": 22,
+      "original_geometry_preserved": true,
+      "original_groups_preserved": true,
+      "links_valid": true,
+      "workspace_assets_empty": true,
+      "story_descriptions_and_prompts_empty": true,
+      "requires_user_authoring": true
+    }
+  ],
+  "private_source_execution": {
+    "date": "2026-11-12",
+    "sampler": "lcm",
+    "pika_adapter_strength": 1,
+    "sigma_schedule": "1.0, 0.972973, 0.923077, 0.8, 0.571429, 0.333333, 0.0",
+    "width": 1344,
+    "height": 768,
+    "fps": 24,
+    "input_frames": [
+      124,
+      124
+    ],
+    "delivered_frames": [
+      124,
+      102
+    ],
+    "video_context_frames": 22,
+    "audio_context_length": 18,
+    "full_video_audio_decode": "passed",
+    "frontend_input_and_geometry_checks": "passed",
+    "browser_playback_across_join": "passed"
+  },
+  "public_scope": "Blank templates checked for content removal, links, original geometry and empty prompt blocking. They require new user content and are not claimed as GPU-rendered public templates.",
+  "public_frontend_reopen_checks": [
+    {
+      "name": "start",
+      "originalGeometryPreserved": true,
+      "blankContent": true,
+      "recipeAndContextWiringValid": true
+    },
+    {
+      "name": "continue",
+      "originalGeometryPreserved": true,
+      "blankContent": true,
+      "recipeAndContextWiringValid": true
+    }
+  ],
+  "repository_python_tests": {
+    "run": 137,
+    "skipped": 1,
+    "result": "OK",
+    "command": "python -X utf8 -m unittest discover -s tests -v"
+  }
+}

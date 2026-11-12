@@ -1,5 +1,9 @@
 # Example workflows
 
+## Pika H3 Flex + Motion Context — blank templates
+
+[Start / continuation setup](pika-motion-context/README.md) · [中文](pika-motion-context/README.zh-CN.md). These preserve the official Pika canvas and add Workspace/native AV latent continuation. They deliberately contain no story, dialogue, prompts or selected assets: author your own content before generating. Their private source pair ran successfully; these blank files have structural/content checks and are separate from the three public-fixture GPU reruns below.
+
 Bundled reference images and the three-second video are procedural color blocks for testing media connections, not AI-generated results. Replace them with your material for creative work.
 
 New installation? Follow the [installation and first-run guide](../docs/INSTALL.md) ([中文](../docs/INSTALL.zh-CN.md)) first. It includes Windows Portable commands, Desktop/environment selection, LLM setup and a complete first run of example 01. The instructions below cover each workflow's additional dependencies and connections.
